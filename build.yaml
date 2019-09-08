@@ -1,0 +1,16 @@
+---
+name: "jellyfin-plugin-douban"
+guid: "e325b8d5-5f54-447f-a38a-a951b933d22c"
+version: "0.0.1"
+nicename: "Douban"
+description: "Scrape the meta data from Douban"
+overview: >
+  TODO This is a longer description that can span more than one
+  line and include details about your plugin.
+category: "Metadata"
+owner: "libitum"
+artifacts:
+  - "Jellyfin.Plugin.Douban.dll"
+build_type: "dotnet"
+dotnet_configuration: "Release"
+dotnet_framework: "netstandard2.0"
