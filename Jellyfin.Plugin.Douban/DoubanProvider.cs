@@ -56,12 +56,16 @@ namespace Jellyfin.Plugin.Douban
             {
                 // Get subject id firstly
                 sid = await GetSidByName(info.Name, cancellationToken).ConfigureAwait(false);
-                info.SetProviderId(ProviderID, sid);
             }
 
+            if (string.IsNullOrWhiteSpace(sid))
+            {
+                // Not found, just return
+                return new MetadataResult<Movie>();
+            }
+
+            info.SetProviderId(ProviderID, sid);
             var result = await GetMovieItem(sid, cancellationToken).ConfigureAwait(false);
-            result.QueriedById = true;
-            result.HasMetadata = true;
             return result;
         }
 
@@ -96,15 +100,18 @@ namespace Jellyfin.Plugin.Douban
                 EnableDefaultUserAgent = true,
             };
 
-            String sid;
+            String sid = "";
             using (var response = await _httpClient.GetResponse(options).ConfigureAwait(false))
             {
                 String content = new StreamReader(response.Content).ReadToEnd();
                 String pattern = @"sid: (\d+)";
                 Match match = Regex.Match(content, pattern);
-                sid = match.Groups[1].Value;
+                if (match.Success)
+                {
+                    sid = match.Groups[1].Value;
+                    _logger.LogInformation("The sid of {0} is {1}", name, sid);
+                }
             }
-            _logger.LogInformation("The sid of {0} is {1}", name, sid);
             return sid;
         }
 
@@ -115,6 +122,13 @@ namespace Jellyfin.Plugin.Douban
             {
                 Item = new Movie(),
             };
+
+            if (string.IsNullOrWhiteSpace(sid))
+            {
+                _logger.LogWarning("Can not get movie item, sid is empty");
+                return result;
+            }
+
             var movie = result.Item;
 
             String apikey = _config.ApiKey;
@@ -147,6 +161,9 @@ namespace Jellyfin.Plugin.Douban
                 TransPersonInfo(data.Casts, PersonType.Actor).ForEach(item => result.AddPerson(item));
                 TransPersonInfo(data.Writers, PersonType.Writer).ForEach(item => result.AddPerson(item));
             }
+
+            result.QueriedById = true;
+            result.HasMetadata = true;
 
             _logger.LogInformation("The name of sid {0} is {1}", sid, movie.Name);
             return result;

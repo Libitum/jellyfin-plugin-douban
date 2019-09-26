@@ -42,7 +42,7 @@ namespace Jellyfin.Plugin.Douban.Tests
         {
             var response = _doubanProvider.GetMovieItem("3541415", CancellationToken.None);
             var metadata = response.Result;
-            System.Console.WriteLine(metadata.Item.Name);
+            Assert.True(metadata.HasMetadata);
             Assert.Equal("盗梦空间", metadata.Item.Name);
         }
     }
