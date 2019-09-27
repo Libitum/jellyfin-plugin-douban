@@ -101,10 +101,10 @@ namespace Jellyfin.Plugin.Douban
             movie.PremiereDate = DateTime.Parse(data.Pubdate);
             movie.HomePageUrl = data.Alt;
             movie.ProductionLocations = data.Countries.ToArray();
-            foreach (var genre in data.Genres)
-            {
-                movie.AddGenre(genre);
-            }
+
+            data.Trailer_Urls.ForEach(item => movie.AddTrailerUrl(item));
+            data.Genres.ForEach(item => movie.AddGenre(item));
+
             return movie;
         }
 

@@ -13,6 +13,7 @@ namespace Jellyfin.Plugin.Douban.Response
         public Avatar Images {get; set;}
         public string Alt {get; set;}
         public List<string> Countries {get; set;}
+        public List<string> Trailer_Urls {get; set;}
         public List<PersonInfo> Directors {get; set;}
         public List<PersonInfo> Writers {get; set;}
         public List<PersonInfo> Casts {get; set;}
