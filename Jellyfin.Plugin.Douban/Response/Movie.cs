@@ -17,7 +17,10 @@ namespace Jellyfin.Plugin.Douban.Response
         public List<PersonInfo> Writers {get; set;}
         public List<PersonInfo> Casts {get; set;}
         public List<string> Genres {get; set;}
-
+        public string Subtype {get; set;}
+        // season information
+        public int? Seasons_Count {get; set;}
+        public int? Current_Season {get; set;}
     }
 
     internal class Rating
@@ -31,11 +34,10 @@ namespace Jellyfin.Plugin.Douban.Response
         public string Alt {get; set;}
         public string Id {get; set;}
         public Avatar Avatars {get; set;}
-
     }
 
     internal class Avatar
     {
-        public string Medium {get; set;}
+        public string Large {get; set;}
     }
 }
