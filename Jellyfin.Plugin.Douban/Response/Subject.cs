@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Jellyfin.Plugin.Douban.Response
 {
-    internal class Movie
+    internal class Subject
     {
         public string Title {get; set;}
         public string Original_Title {get; set;}

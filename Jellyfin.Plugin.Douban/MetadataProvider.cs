@@ -90,7 +90,7 @@ namespace Jellyfin.Plugin.Douban
             return result;
         }
 
-        private Movie TransMovieInfo(Response.Movie data)
+        private Movie TransMovieInfo(Response.Subject data)
         {
             var movie = new Movie();
             movie.Name = data.Title;

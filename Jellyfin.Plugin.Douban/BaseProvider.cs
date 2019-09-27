@@ -42,7 +42,7 @@ namespace Jellyfin.Plugin.Douban
             });
         }
 
-        internal async Task<Response.Movie> GetMovieSubject(string sid,
+        internal async Task<Response.Subject> GetMovieSubject(string sid,
                                                             CancellationToken cancellationToken)
         {
             _logger.LogInformation("Trying to get movie subject by sid: {0}", sid);
@@ -67,7 +67,7 @@ namespace Jellyfin.Plugin.Douban
 
             using (var response = await _httpClient.GetResponse(options).ConfigureAwait(false))
             {
-                var data = await _jsonSerializer.DeserializeFromStreamAsync<Response.Movie>(response.Content);
+                var data = await _jsonSerializer.DeserializeFromStreamAsync<Response.Subject>(response.Content);
                 return data;
             }
         }
