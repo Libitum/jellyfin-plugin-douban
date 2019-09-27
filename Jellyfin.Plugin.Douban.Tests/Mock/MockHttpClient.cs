@@ -56,12 +56,11 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
             throw new NotImplementedException();
         }
 
-/* 
-        Task<HttpResponseInfo> SendAsync(HttpRequestOptions options, HttpMethod httpMethod)
+        public Task<HttpResponseInfo> SendAsync(HttpRequestOptions options, HttpMethod httpMethod)
         {
             throw new NotImplementedException();
         }
-*/
+
         public Task<HttpResponseInfo> Post(HttpRequestOptions options)
         {
             throw new NotImplementedException();

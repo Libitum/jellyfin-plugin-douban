@@ -60,6 +60,11 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
             return JsonSerializer.SerializeToString(obj);
         }
 
+        public void SerializeToStream<T>(T obj, Stream stream)
+        {
+            JsonSerializer.SerializeToStream(obj, stream);
+        }
+
         public void SerializeToStream(object obj, Stream stream)
         {
             JsonSerializer.SerializeToStream(obj, stream);
