@@ -22,6 +22,7 @@ namespace Jellyfin.Plugin.Douban.Response
         // season information
         public int? Seasons_Count {get; set;}
         public int? Current_Season {get; set;}
+        public int? Episodes_Count {get; set;}
     }
 
     internal class Rating
