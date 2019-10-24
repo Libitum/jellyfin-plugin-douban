@@ -109,13 +109,17 @@ namespace Jellyfin.Plugin.Douban
                 CommunityRating = data.Rating.Average,
                 Overview = data.Summary,
                 ProductionYear = int.Parse(data.Year),
-                PremiereDate = DateTime.Parse(data.Pubdate),
                 HomePageUrl = data.Alt,
                 ProductionLocations = data.Countries.ToArray()
             };
 
+            if (String.IsNullOrEmpty(data.Pubdate))
+            {
+                movie.PremiereDate = DateTime.Parse(data.Pubdate);
+            }
+
             data.Trailer_Urls.ForEach(item => movie.AddTrailerUrl(item));
-            data.Genres.ForEach(item => movie.AddGenre(item));
+            data.Genres.ForEach(movie.AddGenre);
 
             return movie;
         }
