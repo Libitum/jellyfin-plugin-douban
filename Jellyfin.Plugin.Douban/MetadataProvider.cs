@@ -19,7 +19,8 @@ using Jellyfin.Plugin.Douban.Configuration;
 
 namespace Jellyfin.Plugin.Douban
 {
-    public class MetadataProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieInfo>, IHasOrder
+    public class MetadataProvider : BaseProvider, IHasOrder,
+        IRemoteMetadataProvider<Movie, MovieInfo>
     {
         public String Name => "Douban Metadata Provider";
         public int Order => 3;
@@ -31,9 +32,17 @@ namespace Jellyfin.Plugin.Douban
             // Empty
         }
 
-        public async Task<MetadataResult<Movie>> GetMetadata(MovieInfo info, CancellationToken cancellationToken)
+        public async Task<MetadataResult<Movie>> GetMetadata(MovieInfo info,
+                                                             CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Douban:GetMetadata name: {info.Name}");
+
+            if (info.MetadataLanguage != "zh")
+            {
+                _logger.LogInformation("DoubanProvider: the required launguage is not zh, " +
+                    "so just bypass DoubanProvider");
+                return new MetadataResult<Movie>();
+            }
 
             var sid = info.GetProviderId(ProviderID);
             if (string.IsNullOrWhiteSpace(sid))
@@ -60,7 +69,8 @@ namespace Jellyfin.Plugin.Douban
             throw new NotImplementedException("Douban:GetSearchResults");
         }
 
-        public async Task<MetadataResult<Movie>> GetMovieItem(string sid, CancellationToken cancellationToken)
+        public async Task<MetadataResult<Movie>> GetMovieItem(string sid,
+                                                              CancellationToken cancellationToken)
         {
             _logger.LogInformation("Trying to get movie item by sid: {0}", sid);
             var result = new MetadataResult<Movie>();
@@ -79,9 +89,9 @@ namespace Jellyfin.Plugin.Douban
             }
 
             result.Item = TransMovieInfo(data);
-            TransPersonInfo(data.Directors, PersonType.Director).ForEach(item => result.AddPerson(item));
-            TransPersonInfo(data.Casts, PersonType.Actor).ForEach(item => result.AddPerson(item));
-            TransPersonInfo(data.Writers, PersonType.Writer).ForEach(item => result.AddPerson(item));
+            TransPersonInfo(data.Directors, PersonType.Director).ForEach(result.AddPerson);
+            TransPersonInfo(data.Casts, PersonType.Actor).ForEach(result.AddPerson);
+            TransPersonInfo(data.Writers, PersonType.Writer).ForEach(result.AddPerson);
 
             result.QueriedById = true;
             result.HasMetadata = true;
@@ -92,15 +102,17 @@ namespace Jellyfin.Plugin.Douban
 
         private Movie TransMovieInfo(Response.Subject data)
         {
-            var movie = new Movie();
-            movie.Name = data.Title;
-            movie.OriginalTitle = data.Original_Title;
-            movie.CommunityRating = data.Rating.Average;
-            movie.Overview = data.Summary;
-            movie.ProductionYear = int.Parse(data.Year);
-            movie.PremiereDate = DateTime.Parse(data.Pubdate);
-            movie.HomePageUrl = data.Alt;
-            movie.ProductionLocations = data.Countries.ToArray();
+            var movie = new Movie
+            {
+                Name = data.Title,
+                OriginalTitle = data.Original_Title,
+                CommunityRating = data.Rating.Average,
+                Overview = data.Summary,
+                ProductionYear = int.Parse(data.Year),
+                PremiereDate = DateTime.Parse(data.Pubdate),
+                HomePageUrl = data.Alt,
+                ProductionLocations = data.Countries.ToArray()
+            };
 
             data.Trailer_Urls.ForEach(item => movie.AddTrailerUrl(item));
             data.Genres.ForEach(item => movie.AddGenre(item));
