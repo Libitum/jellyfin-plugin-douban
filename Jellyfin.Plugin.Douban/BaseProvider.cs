@@ -22,7 +22,7 @@ namespace Jellyfin.Plugin.Douban
 
         protected Configuration.PluginConfiguration _config;
 
-        public BaseProvider(IHttpClient httpClient, IJsonSerializer jsonSerializer, ILogger logger)
+        protected BaseProvider(IHttpClient httpClient, IJsonSerializer jsonSerializer, ILogger logger)
         {
             this._httpClient = httpClient;
             this._jsonSerializer = jsonSerializer;
@@ -50,7 +50,7 @@ namespace Jellyfin.Plugin.Douban
 
             if (string.IsNullOrWhiteSpace(sid))
             {
-                throw new ArgumentException("sid is empty", "sid");
+                throw new ArgumentException("sid is empty when getting subject");
             }
 
             String apikey = _config.ApiKey;
@@ -65,11 +65,9 @@ namespace Jellyfin.Plugin.Douban
                 EnableDefaultUserAgent = true,
             };
 
-            using (var response = await _httpClient.GetResponse(options).ConfigureAwait(false))
-            {
-                var data = await _jsonSerializer.DeserializeFromStreamAsync<Response.Subject>(response.Content);
-                return data;
-            }
+            var response = await _httpClient.GetResponse(options).ConfigureAwait(false);
+            var data = await _jsonSerializer.DeserializeFromStreamAsync<Response.Subject>(response.Content);
+            return data;
         }
 
         protected async Task<string> SearchSidByName(string name, CancellationToken cancellationToken)
@@ -87,8 +85,9 @@ namespace Jellyfin.Plugin.Douban
             };
 
             using (var response = await _httpClient.GetResponse(options).ConfigureAwait(false))
+            using (var reader = new StreamReader(response.Content))
             {
-                String content = new StreamReader(response.Content).ReadToEnd();
+                String content = reader.ReadToEnd();
                 String pattern = @"sid: (\d+)";
                 Match match = Regex.Match(content, pattern);
                 if (match.Success)
