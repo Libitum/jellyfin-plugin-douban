@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,7 +50,8 @@ namespace Jellyfin.Plugin.Douban
             if (string.IsNullOrWhiteSpace(sid))
             {
                 // Get subject id firstly
-                sid = await SearchSidByName(info.Name, cancellationToken).ConfigureAwait(false);
+                var sidList = await SearchSidByName(info.Name, cancellationToken).ConfigureAwait(false);
+                sid = sidList.FirstOrDefault();
             }
 
             if (string.IsNullOrWhiteSpace(sid))
@@ -78,30 +80,21 @@ namespace Jellyfin.Plugin.Douban
                 return results;
             }
 
-            var sid = info.GetProviderId(ProviderID);
-            if (string.IsNullOrWhiteSpace(sid))
+            var sidList = await SearchSidByName(info.Name, cancellationToken).ConfigureAwait(false);
+            foreach (String sid in sidList)
             {
-                // Get subject id firstly
-                sid = await SearchSidByName(info.Name, cancellationToken).ConfigureAwait(false);
+                var subject = await GetSubject(sid, cancellationToken).ConfigureAwait(false);
+                var searchResult = new RemoteSearchResult()
+                {
+                    Name = subject.Title,
+                    ImageUrl = subject.Images.Large,
+                    Overview = subject.Summary,
+                    ProductionYear = int.Parse(subject.Year),
+                };
+                searchResult.SetProviderId(ProviderID, sid);
+                results.Add(searchResult);
             }
 
-            if (string.IsNullOrWhiteSpace(sid))
-            {
-                // Not found, just return
-                return results;
-            }
-
-            var subject = await GetSubject(sid, cancellationToken).ConfigureAwait(false);
-            var searchResult = new RemoteSearchResult()
-            {
-                Name = subject.Title,
-                ImageUrl = subject.Images.Large,
-                Overview = subject.Summary,
-                ProductionYear = int.Parse(subject.Year),
-            };
-            searchResult.SetProviderId(ProviderID, sid);
-
-            results.Add(searchResult);
             return results;
         }
 

@@ -1,14 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.Logging;
-
 using MediaBrowser.Common.Net;
 using MediaBrowser.Model.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Douban
 {
@@ -70,14 +69,16 @@ namespace Jellyfin.Plugin.Douban
             return data;
         }
 
-        protected async Task<string> SearchSidByName(string name, CancellationToken cancellationToken)
+        protected async Task<IEnumerable<string>> SearchSidByName(string name, CancellationToken cancellationToken)
         {
             _logger.LogTrace("Trying to get sid by name: {0}", name);
+
+            var sidList = new SortedSet<string>();
 
             if (String.IsNullOrWhiteSpace(name))
             {
                 _logger.LogWarning("Search name is empty.");
-                return "";
+                return sidList;
             }
 
             // TODO: Change to use the search api instead of parsing by HTML when the search api
@@ -97,14 +98,17 @@ namespace Jellyfin.Plugin.Douban
                 String content = reader.ReadToEnd();
                 String pattern = @"sid: (\d+)";
                 Match match = Regex.Match(content, pattern);
-                if (match.Success)
+
+                while (match.Success)
                 {
                     var sid = match.Groups[1].Value;
                     _logger.LogInformation("The sid of {0} is {1}", name, sid);
-                    return sid;
+                    sidList.Add(sid);
+
+                    match = match.NextMatch();
                 }
             }
-            return "";
+            return sidList;
         }
     }
 }
