@@ -37,7 +37,7 @@ namespace Jellyfin.Plugin.Douban
                 _logger.LogWarning("GetImages failed because that the sid is empty: {Name}", item.Name);
                 return list;
             }
-            var movie =  await GetMovieSubject(sid, cancellationToken);
+            var movie =  await GetSubject(sid, cancellationToken);
             list.Add(new RemoteImageInfo{
                 ProviderName = Name,
                 Url = movie.Images.Large,

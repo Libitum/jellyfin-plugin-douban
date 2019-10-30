@@ -34,7 +34,7 @@ namespace Jellyfin.Plugin.Douban
 
         public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Douban:GetImageResponse url: {}", url);
+            _logger.LogInformation("Douban:GetImageResponse url: {0}", url);
             return _httpClient.GetResponse(new HttpRequestOptions
             {
                 Url = url,
@@ -42,10 +42,10 @@ namespace Jellyfin.Plugin.Douban
             });
         }
 
-        internal async Task<Response.Subject> GetMovieSubject(string sid,
-                                                            CancellationToken cancellationToken)
+        internal async Task<Response.Subject> GetSubject(string sid,
+                                                         CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Trying to get movie subject by sid: {0}", sid);
+            _logger.LogInformation("Trying to get douban subject by sid: {0}", sid);
             cancellationToken.ThrowIfCancellationRequested();
 
             if (string.IsNullOrWhiteSpace(sid))
@@ -73,6 +73,13 @@ namespace Jellyfin.Plugin.Douban
         protected async Task<string> SearchSidByName(string name, CancellationToken cancellationToken)
         {
             _logger.LogTrace("Trying to get sid by name: {0}", name);
+
+            if (String.IsNullOrWhiteSpace(name))
+            {
+                _logger.LogWarning("Search name is empty.");
+                return "";
+            }
+
             // TODO: Change to use the search api instead of parsing by HTML when the search api
             // is available.
             var url = String.Format("http://www.douban.com/search?cat={0}&q={1}", "1002", name);

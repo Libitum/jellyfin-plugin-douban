@@ -37,6 +37,7 @@ namespace Jellyfin.Plugin.Douban
         {
             _logger.LogInformation($"Douban:GetMetadata name: {info.Name}");
 
+            // Only handle it when launguage is "zh"
             if (info.MetadataLanguage != "zh")
             {
                 _logger.LogInformation("DoubanProvider: the required launguage is not zh, " +
@@ -62,11 +63,46 @@ namespace Jellyfin.Plugin.Douban
             return result;
         }
 
-        public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo info,
+        public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo info,
                 CancellationToken cancellationToken)
         {
             _logger.LogInformation("Douban: search name {0}", info.Name);
-            throw new NotImplementedException("Douban:GetSearchResults");
+
+            var results = new List<RemoteSearchResult>();
+
+            // Only handle it when launguage is "zh"
+            if (info.MetadataLanguage != "zh")
+            {
+                _logger.LogInformation("DoubanProvider: the required launguage is not zh, " +
+                    "so just bypass DoubanProvider");
+                return results;
+            }
+
+            var sid = info.GetProviderId(ProviderID);
+            if (string.IsNullOrWhiteSpace(sid))
+            {
+                // Get subject id firstly
+                sid = await SearchSidByName(info.Name, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (string.IsNullOrWhiteSpace(sid))
+            {
+                // Not found, just return
+                return results;
+            }
+
+            var subject = await GetSubject(sid, cancellationToken).ConfigureAwait(false);
+            var searchResult = new RemoteSearchResult()
+            {
+                Name = subject.Title,
+                ImageUrl = subject.Images.Large,
+                Overview = subject.Summary,
+                ProductionYear = int.Parse(subject.Year),
+            };
+            searchResult.SetProviderId(ProviderID, sid);
+
+            results.Add(searchResult);
+            return results;
         }
 
         public async Task<MetadataResult<Movie>> GetMovieItem(string sid,
@@ -81,7 +117,7 @@ namespace Jellyfin.Plugin.Douban
                 return result;
             }
 
-            var data = await GetMovieSubject(sid, cancellationToken);
+            var data = await GetSubject(sid, cancellationToken);
             if (data.Subtype != "movie")
             {
                 // It's not movie, could be a TV series.
@@ -113,7 +149,7 @@ namespace Jellyfin.Plugin.Douban
                 ProductionLocations = data.Countries.ToArray()
             };
 
-            if (String.IsNullOrEmpty(data.Pubdate))
+            if (!String.IsNullOrEmpty(data.Pubdate))
             {
                 movie.PremiereDate = DateTime.Parse(data.Pubdate);
             }
