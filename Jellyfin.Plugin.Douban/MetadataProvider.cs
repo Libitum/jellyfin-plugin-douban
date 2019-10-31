@@ -98,7 +98,7 @@ namespace Jellyfin.Plugin.Douban
             return results;
         }
 
-        public async Task<MetadataResult<Movie>> GetMovieItem(string sid,
+        private async Task<MetadataResult<Movie>> GetMovieItem(string sid,
                                                               CancellationToken cancellationToken)
         {
             _logger.LogInformation("Trying to get movie item by sid: {0}", sid);
@@ -111,6 +111,7 @@ namespace Jellyfin.Plugin.Douban
             }
 
             var data = await GetSubject(sid, cancellationToken);
+            _logger.LogInformation("get type: {0} {1}", sid, data.Subtype);
             if (data.Subtype != "movie")
             {
                 // It's not movie, could be a TV series.

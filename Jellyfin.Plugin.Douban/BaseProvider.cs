@@ -102,7 +102,7 @@ namespace Jellyfin.Plugin.Douban
                 while (match.Success)
                 {
                     var sid = match.Groups[1].Value;
-                    _logger.LogInformation("The sid of {0} is {1}", name, sid);
+                    _logger.LogDebug("The sid of {0} is {1}", name, sid);
                     sidList.Add(sid);
 
                     match = match.NextMatch();

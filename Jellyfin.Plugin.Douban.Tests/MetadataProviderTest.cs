@@ -2,13 +2,10 @@ using System;
 using System.Net.Http;
 using System.Threading;
 
+using MediaBrowser.Controller.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
-
 using Xunit;
-
-using Jellyfin.Plugin.Douban;
 
 using Jellyfin.Plugin.Douban.Tests.Mock;
 
@@ -32,23 +29,45 @@ namespace Jellyfin.Plugin.Douban.Tests
         }
 
         [Fact]
-        public void TestGetSidByName()
+        public void TestGetMetadata()
         {
-            // var response = _doubanProvider.SearchSidByName("Inception", CancellationToken.None);
-            // Assert.Equal("3541415", response.Result);
-        }
+            MovieInfo info = new MovieInfo()
+            {
+                Name = "龙猫",
+                MetadataLanguage = "en",
+            };
+            
+            // Test 1: language is not "zh"
+            var meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
+            Assert.False(meta.HasMetadata);
 
-        [Fact]
-        public void TestGetMovieItem()
-        {
-            var response = _doubanProvider.GetMovieItem("3541415", CancellationToken.None);
-            var metadata = response.Result;
-            Assert.True(metadata.HasMetadata);
-            Assert.Equal("盗梦空间", metadata.Item.Name);
+            // Test 2: can not get the result.
+            info = new MovieInfo()
+            {
+                MetadataLanguage = "zh",
+                Name = "asdflkjhsadf"
+            };
+            meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
+            Assert.False(meta.HasMetadata);
 
-            // Test not found
-            Assert.ThrowsAsync<HttpRequestException>(() => 
-                    _doubanProvider.GetMovieItem("23434523452", CancellationToken.None));
+            // Test 3: get meta successfully
+            info = new MovieInfo()
+            {
+                MetadataLanguage = "zh",
+                Name = "龙猫"
+            };
+            meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
+            Assert.True(meta.HasMetadata);
+            Assert.Equal("龙猫", meta.Item.Name);
+
+            // Test 4: get it but it's not movie type
+            info = new MovieInfo()
+            {
+                MetadataLanguage = "zh",
+                Name = "亮剑"
+            };
+            meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
+            Assert.False(meta.HasMetadata);
         }
     }
 }
