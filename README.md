@@ -13,7 +13,12 @@ This plugin is a remote metadata provider for Jellyfin, which can fetch metadata
     * For other system, if you cannot find it, please let me know.
 1. Restart the Jellyfin service.
 
-## 3. Configuration
+## 3. Features
+1. Support movie media type
+1. Do not support fetching background image right now since Douban do not have it.
+1. Do not support TV right now since Douban has different meta structure from TMDB. Will support later.
+
+## 4. Configuration
 TODO
 
 # 中文版
@@ -31,5 +36,10 @@ TODO
     * 对于其他系统，如果你找不到位置，请提 issue 或者与我联系。
 1. 重启 Jellyfin Service
 
-## 3. 配置
+## 3. 功能
+1. 支持获取电影类型的元数据
+2. 不支持获取电影的背景图片，因为豆瓣没有大的海报图片。
+3. 不支持电视剧类型，因为豆瓣的数据组织形式和老美的不太一样，所以还要在看一下怎么实现。
+
+## 4. 配置
 TODO
