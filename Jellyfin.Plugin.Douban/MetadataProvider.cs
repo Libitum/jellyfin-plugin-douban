@@ -111,10 +111,11 @@ namespace Jellyfin.Plugin.Douban
             }
 
             var data = await GetSubject(sid, cancellationToken);
-            _logger.LogInformation("get type: {0} {1}", sid, data.Subtype);
             if (data.Subtype != "movie")
             {
                 // It's not movie, could be a TV series.
+                _logger.LogInformation("GetMovieItem: {0} type is {1}, so just ignore it",
+                                       sid, data.Subtype);
                 return result;
             }
 
@@ -163,7 +164,7 @@ namespace Jellyfin.Plugin.Douban
                 {
                     Name = person.Name,
                     Role = role,
-                    ImageUrl = person.Avatars.Large,
+                    ImageUrl = person.Avatars?.Large,
                 };
 
                 personInfo.SetProviderId(ProviderID, person.Id);
