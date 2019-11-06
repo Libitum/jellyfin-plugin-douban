@@ -84,6 +84,11 @@ namespace Jellyfin.Plugin.Douban
             foreach (String sid in sidList)
             {
                 var subject = await GetSubject(sid, cancellationToken).ConfigureAwait(false);
+                if (subject.Subtype != "movie")
+                {
+                    continue;
+                }
+
                 var searchResult = new RemoteSearchResult()
                 {
                     Name = subject.Title,
