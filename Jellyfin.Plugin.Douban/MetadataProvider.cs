@@ -160,7 +160,7 @@ namespace Jellyfin.Plugin.Douban
             return movie;
         }
 
-        private List<PersonInfo> TransPersonInfo(List<Response.PersonInfo> persons, string role)
+        private List<PersonInfo> TransPersonInfo(List<Response.PersonInfo> persons, string personType)
         {
             var result = new List<PersonInfo>();
             foreach (var person in persons)
@@ -168,7 +168,7 @@ namespace Jellyfin.Plugin.Douban
                 var personInfo = new PersonInfo
                 {
                     Name = person.Name,
-                    Role = role,
+                    Type = personType,
                     ImageUrl = person.Avatars?.Large,
                 };
 
