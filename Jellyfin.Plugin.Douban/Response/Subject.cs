@@ -40,9 +40,6 @@ namespace Jellyfin.Plugin.Douban.Response
 
     internal class Avatar
     {
-        public string Large {
-            get => Large;
-            set => Large = value.Replace("s_ratio", "l_ratio");
-        }
+        public string Large { get; set; }
     }
 }

@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
 using MediaBrowser.Common.Net;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Serialization;
+
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Douban
@@ -21,7 +26,8 @@ namespace Jellyfin.Plugin.Douban
 
         protected Configuration.PluginConfiguration _config;
 
-        protected BaseProvider(IHttpClient httpClient, IJsonSerializer jsonSerializer, ILogger logger)
+        protected BaseProvider(IHttpClient httpClient,
+            IJsonSerializer jsonSerializer, ILogger logger)
         {
             this._httpClient = httpClient;
             this._jsonSerializer = jsonSerializer;
@@ -29,9 +35,11 @@ namespace Jellyfin.Plugin.Douban
             this._config = Plugin.Instance == null ?
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
+
         }
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
+        public Task<HttpResponseInfo> GetImageResponse(string url,
+            CancellationToken cancellationToken)
         {
             _logger.LogInformation("Douban:GetImageResponse url: {0}", url);
             return _httpClient.GetResponse(new HttpRequestOptions
@@ -41,39 +49,13 @@ namespace Jellyfin.Plugin.Douban
             });
         }
 
-        internal async Task<Response.Subject> GetSubject(string sid,
-                                                         CancellationToken cancellationToken)
+        protected async Task<IEnumerable<string>> SearchSidByName(string name,
+            CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Trying to get douban subject by sid: {0}", sid);
-            cancellationToken.ThrowIfCancellationRequested();
+            _logger.LogInformation("Douban: Trying to search sid by name: {0}",
+                                   name);
 
-            if (string.IsNullOrWhiteSpace(sid))
-            {
-                throw new ArgumentException("sid is empty when getting subject");
-            }
-
-            String apikey = _config.ApiKey;
-            var url = String.Format("http://api.douban.com/v2/movie/subject/{0}?apikey={1}",
-                                    sid,
-                                    apikey);
-            var options = new HttpRequestOptions
-            {
-                Url = url,
-                CancellationToken = cancellationToken,
-                BufferContent = true,
-                EnableDefaultUserAgent = true,
-            };
-
-            var response = await _httpClient.GetResponse(options).ConfigureAwait(false);
-            var data = await _jsonSerializer.DeserializeFromStreamAsync<Response.Subject>(response.Content);
-            return data;
-        }
-
-        protected async Task<IEnumerable<string>> SearchSidByName(string name, CancellationToken cancellationToken)
-        {
-            _logger.LogTrace("Trying to get sid by name: {0}", name);
-
-            var sidList = new SortedSet<string>();
+            var sidList = new List<string>();
 
             if (String.IsNullOrWhiteSpace(name))
             {
@@ -81,9 +63,10 @@ namespace Jellyfin.Plugin.Douban
                 return sidList;
             }
 
-            // TODO: Change to use the search api instead of parsing by HTML when the search api
-            // is available.
-            var url = String.Format("http://www.douban.com/search?cat={0}&q={1}", "1002", name);
+            // TODO: Change to use the search api instead of parsing by HTML
+            // when the search api is available.
+            var url = String.Format("http://www.douban.com/search?cat={0}&q={1}",
+                "1002", name);
             var options = new HttpRequestOptions
             {
                 Url = url,
@@ -92,7 +75,8 @@ namespace Jellyfin.Plugin.Douban
                 EnableDefaultUserAgent = true,
             };
 
-            using (var response = await _httpClient.GetResponse(options).ConfigureAwait(false))
+            using (var response = await _httpClient.GetResponse(options).
+                ConfigureAwait(false))
             using (var reader = new StreamReader(response.Content))
             {
                 String content = reader.ReadToEnd();
@@ -108,7 +92,119 @@ namespace Jellyfin.Plugin.Douban
                     match = match.NextMatch();
                 }
             }
-            return sidList;
+            return sidList.Distinct().ToList();
+        }
+
+        protected async Task<MetadataResult<T>> GetMetaFromDouban<T>(string sid,
+            string type, CancellationToken cancellationToken)
+            where T : BaseItem, new()
+        {
+            _logger.LogInformation("Trying to get item by sid: {0}", sid);
+            var result = new MetadataResult<T>();
+
+            if (string.IsNullOrWhiteSpace(sid))
+            {
+                _logger.LogWarning("Can not get movie item, sid is empty");
+                return result;
+            }
+
+            var data = await GetDoubanSubject(sid, cancellationToken);
+            if (!String.IsNullOrEmpty(type) && data.Subtype != type)
+            {
+                _logger.LogInformation("Douban: Sid {1}'s type is {2}, " +
+                    "but require {3}", sid, data.Subtype, type);
+                return result;
+            }
+
+            result.Item = TransMediaInfo<T>(data);
+            TransPersonInfo(data.Directors, PersonType.Director).
+                ForEach(result.AddPerson);
+            TransPersonInfo(data.Casts, PersonType.Actor).
+                ForEach(result.AddPerson);
+            TransPersonInfo(data.Writers, PersonType.Writer).
+                ForEach(result.AddPerson);
+
+            result.QueriedById = true;
+            result.HasMetadata = true;
+
+            _logger.LogInformation("Douban: The name of sid {0} is {1}",
+                sid, result.Item.Name);
+            return result;
+        }
+
+        internal async Task<Response.Subject> GetDoubanSubject(string sid,
+                                         CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Douban: Trying to get douban subject by " +
+                "sid: {0}", sid);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (string.IsNullOrWhiteSpace(sid))
+            {
+                throw new ArgumentException("sid is empty when getting subject");
+            }
+
+            String apikey = _config.ApiKey;
+            var url = String.Format("http://api.douban.com/v2/movie/subject" +
+                "/{0}?apikey={1}", sid, apikey);
+            var options = new HttpRequestOptions
+            {
+                Url = url,
+                CancellationToken = cancellationToken,
+                BufferContent = true,
+                EnableDefaultUserAgent = true,
+            };
+
+            var response = await _httpClient.GetResponse(options).
+                ConfigureAwait(false);
+            var data = await _jsonSerializer.DeserializeFromStreamAsync
+                <Response.Subject>(response.Content).ConfigureAwait(false);
+
+            return data;
+        }
+
+        private T TransMediaInfo<T>(Response.Subject data)
+            where T : BaseItem, new()
+        {
+            var media = new T
+            {
+                Name = data.Title,
+                OriginalTitle = data.Original_Title,
+                CommunityRating = data.Rating.Average,
+                Overview = data.Summary.Replace("\n", "</br>"),
+                ProductionYear = int.Parse(data.Year),
+                HomePageUrl = data.Alt,
+                ProductionLocations = data.Countries.ToArray()
+            };
+
+            if (!String.IsNullOrEmpty(data.Pubdate))
+            {
+                media.PremiereDate = DateTime.Parse(data.Pubdate);
+            }
+
+            data.Trailer_Urls.ForEach(item => media.AddTrailerUrl(item));
+            data.Genres.ForEach(media.AddGenre);
+
+            return media;
+        }
+
+        private List<PersonInfo> TransPersonInfo(
+            List<Response.PersonInfo> persons, string personType)
+        {
+            var result = new List<PersonInfo>();
+            foreach (var person in persons)
+            {
+                var personInfo = new PersonInfo
+                {
+                    Name = person.Name,
+                    Type = personType,
+                    ImageUrl = person.Avatars?.Large,
+                };
+
+                personInfo.SetProviderId(ProviderID, person.Id);
+                result.Add(personInfo);
+            }
+            return result;
         }
     }
 }

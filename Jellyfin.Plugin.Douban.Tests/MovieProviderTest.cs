@@ -11,12 +11,12 @@ using Jellyfin.Plugin.Douban.Tests.Mock;
 
 namespace Jellyfin.Plugin.Douban.Tests
 {
-    public class MetadataProviderTest
+    public class MovieProviderTest
     {
-        private readonly MetadataProvider _doubanProvider;
+        private readonly MovieProvider _doubanProvider;
         private readonly IServiceProvider _serviceProvider;
 
-        public MetadataProviderTest()
+        public MovieProviderTest()
         {
             _serviceProvider = new ServiceCollection().AddLogging(builder => builder.AddConsole())
                                                       .BuildServiceProvider();
@@ -25,7 +25,7 @@ namespace Jellyfin.Plugin.Douban.Tests
 
             var httpClient = new MockHttpClient();
             var jsonSerializer = new MockJsonSerializer();
-            _doubanProvider = new MetadataProvider(httpClient, jsonSerializer, logger);
+            _doubanProvider = new MovieProvider(httpClient, jsonSerializer, logger);
         }
 
         [Fact]
