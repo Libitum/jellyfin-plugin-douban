@@ -18,7 +18,7 @@ namespace Jellyfin.Plugin.Douban
 {
     public abstract class BaseProvider
     {
-        protected const string ProviderID = "DoubanID";
+        internal const string ProviderID = "DoubanID";
 
         protected IHttpClient _httpClient;
         protected IJsonSerializer _jsonSerializer;

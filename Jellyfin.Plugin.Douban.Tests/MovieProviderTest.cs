@@ -64,7 +64,7 @@ namespace Jellyfin.Plugin.Douban.Tests
             info = new MovieInfo()
             {
                 MetadataLanguage = "zh",
-                Name = "亮剑"
+                Name = "三国演义"
             };
             meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
             Assert.False(meta.HasMetadata);

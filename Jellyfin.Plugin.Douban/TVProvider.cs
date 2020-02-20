@@ -44,11 +44,11 @@ namespace Jellyfin.Plugin.Douban
             _logger.LogInformation($"Douban:GetMetadata name: {info.Name}");
 
 
-            // Only handle it when launguage is "zh"
+            // Only handle it when language is "zh"
             if (info.MetadataLanguage != "zh")
             {
                 _logger.LogInformation("DoubanProvider: the required " +
-                    "launguage is not zh, so just bypass DoubanProvider");
+                    "language is not zh, so just bypass DoubanProvider");
                 return new MetadataResult<Series>();
             }
 
@@ -77,6 +77,7 @@ namespace Jellyfin.Plugin.Douban
             if (result.HasMetadata)
             {
                 info.SetProviderId(ProviderID, sid);
+                result.QueriedById = true;
             }
 
             return result;
@@ -89,16 +90,31 @@ namespace Jellyfin.Plugin.Douban
 
             var results = new List<RemoteSearchResult>();
 
-            // Only handle it when launguage is "zh"
+            // Only handle it when language is "zh"
             if (info.MetadataLanguage != "zh")
             {
                 _logger.LogInformation("DoubanProvider: the required " +
-                    "launguage is not zh, so just bypass DoubanProvider");
+                    "language is not zh, so just bypass DoubanProvider");
                 return results;
             }
 
-            var sidList = await SearchSidByName(info.Name, cancellationToken).
-                ConfigureAwait(false);
+            IEnumerable<string> sidList;
+
+            string doubanId = info.GetProviderId(ProviderID);
+            _logger.LogInformation("douban id is {0}", doubanId);
+            if (!string.IsNullOrEmpty(doubanId))
+            {
+                sidList = new List<string>
+                {
+                    doubanId
+                };
+            }
+            else
+            {
+                sidList = await SearchSidByName(info.Name, cancellationToken).
+                    ConfigureAwait(false);
+            }
+
             foreach (String sid in sidList)
             {
                 var subject = await GetDoubanSubject(sid, cancellationToken).

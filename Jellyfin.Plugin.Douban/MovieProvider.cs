@@ -86,8 +86,23 @@ namespace Jellyfin.Plugin.Douban
                 return results;
             }
 
-            var sidList = await SearchSidByName(info.Name, cancellationToken).
-                ConfigureAwait(false);
+            IEnumerable<string> sidList;
+
+            string doubanId = info.GetProviderId(ProviderID);
+            _logger.LogInformation("douban id is {0}", doubanId);
+            if (!string.IsNullOrEmpty(doubanId))
+            {
+                sidList = new List<string>
+                {
+                    doubanId
+                };
+            }
+            else
+            {
+                sidList = await SearchSidByName(info.Name, cancellationToken).
+                    ConfigureAwait(false);
+            }
+
             foreach (String sid in sidList)
             {
                 var subject = await GetDoubanSubject(sid, cancellationToken).
