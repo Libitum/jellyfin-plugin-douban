@@ -9,7 +9,7 @@ namespace Jellyfin.Plugin.Douban
     {
         public string Name => "Douban";
 
-        public string Key => "DoubanID";
+        public string Key => BaseProvider.ProviderID;
 
         public string UrlFormatString => "https://movie.douban.com/subject/{0}/";
 
