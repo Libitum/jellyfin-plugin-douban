@@ -38,11 +38,11 @@ namespace Jellyfin.Plugin.Douban
         {
             _logger.LogInformation($"Douban:GetMetadata movie name: {info.Name}");
 
-            // Only handle it when launguage is "zh"
+            // Only handle it when language is "zh"
             if (info.MetadataLanguage != "zh")
             {
                 _logger.LogInformation("DoubanProvider: the required " +
-                    "launguage is not zh, so just bypass DoubanProvider");
+                    "language is not zh, so just bypass DoubanProvider");
                 return new MetadataResult<Movie>();
             }
 
@@ -78,11 +78,11 @@ namespace Jellyfin.Plugin.Douban
 
             var results = new List<RemoteSearchResult>();
 
-            // Only handle it when launguage is "zh"
+            // Only handle it when language is "zh"
             if (info.MetadataLanguage != "zh")
             {
                 _logger.LogInformation("DoubanProvider: the required " +
-                    "launguage is not zh, so just bypass DoubanProvider");
+                    "language is not zh, so just bypass DoubanProvider");
                 return results;
             }
 
