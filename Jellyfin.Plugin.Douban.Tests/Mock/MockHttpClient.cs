@@ -1,9 +1,7 @@
 using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Net.Http;
-
+using System.Threading.Tasks;
 using MediaBrowser.Common.Net;
 
 namespace Jellyfin.Plugin.Douban.Tests.Mock

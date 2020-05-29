@@ -1,13 +1,10 @@
 using System;
-using System.Net.Http;
 using System.Threading;
-
+using Jellyfin.Plugin.Douban.Tests.Mock;
 using MediaBrowser.Controller.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
-
-using Jellyfin.Plugin.Douban.Tests.Mock;
 
 namespace Jellyfin.Plugin.Douban.Tests
 {
@@ -36,7 +33,7 @@ namespace Jellyfin.Plugin.Douban.Tests
                 Name = "龙猫",
                 MetadataLanguage = "en",
             };
-            
+
             // Test 1: language is not "zh"
             var meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
             Assert.False(meta.HasMetadata);

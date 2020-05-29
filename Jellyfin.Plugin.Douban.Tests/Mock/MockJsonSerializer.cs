@@ -1,10 +1,8 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-
-using ServiceStack.Text;
-
 using MediaBrowser.Model.Serialization;
+using ServiceStack.Text;
 
 namespace Jellyfin.Plugin.Douban.Tests.Mock
 {
@@ -30,7 +28,7 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
             throw new NotImplementedException();
         }
 
-        public T DeserializeFromFile<T>(string File) where T: class
+        public T DeserializeFromFile<T>(string File) where T : class
         {
             throw new NotImplementedException();
         }

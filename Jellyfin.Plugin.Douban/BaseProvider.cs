@@ -10,6 +10,7 @@ using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Serialization;
 
 using Microsoft.Extensions.Logging;
@@ -75,10 +76,11 @@ namespace Jellyfin.Plugin.Douban
                 EnableDefaultUserAgent = true,
             };
 
-            using (var response = await _httpClient.GetResponse(options).
-                ConfigureAwait(false))
-            using (var reader = new StreamReader(response.Content))
+            try
             {
+                using var response = await _httpClient.GetResponse(options).
+                    ConfigureAwait(false);
+                using var reader = new StreamReader(response.Content);
                 String content = reader.ReadToEnd();
                 String pattern = @"sid: (\d+)";
                 Match match = Regex.Match(content, pattern);
@@ -91,6 +93,12 @@ namespace Jellyfin.Plugin.Douban
 
                     match = match.NextMatch();
                 }
+            }
+            catch (HttpException e)
+            {
+                _logger.LogError("Could not access url: {0}, status code: {1}",
+                                 url, e.StatusCode);
+                throw e;
             }
             return sidList.Distinct().ToList();
         }
@@ -160,6 +168,8 @@ namespace Jellyfin.Plugin.Douban
             var data = await _jsonSerializer.DeserializeFromStreamAsync
                 <Response.Subject>(response.Content).ConfigureAwait(false);
 
+            _logger.LogInformation("Get douban subject {0} successfully: {1}",
+                                   sid, data.Title);
             return data;
         }
 
