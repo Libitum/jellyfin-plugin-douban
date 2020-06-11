@@ -8,10 +8,10 @@ namespace Jellyfin.Plugin.Douban
 {
     public class DoubanAccessor
     {
-        private IHttpClient _httpClient;
-        private long _lastAccessTime;
+        private readonly IHttpClient _httpClient;
         private readonly Random _random;
-        
+        private long _lastAccessTime;
+
         // Used as the user agent when access Douban.
         private readonly string[] _userAgentList = {
             "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36",
