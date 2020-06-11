@@ -40,7 +40,7 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
 
         public T DeserializeFromString<T>(string text)
         {
-            throw new NotImplementedException();
+            return JsonSerializer.DeserializeFromString<T>(text);
         }
 
         public object DeserializeFromString(string Json, Type t)

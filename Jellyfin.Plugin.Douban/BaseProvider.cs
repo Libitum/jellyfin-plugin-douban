@@ -26,6 +26,7 @@ namespace Jellyfin.Plugin.Douban
         protected ILogger _logger;
 
         protected Configuration.PluginConfiguration _config;
+        protected DoubanAccessor _doubanAccessor;
 
         protected BaseProvider(IHttpClient httpClient,
             IJsonSerializer jsonSerializer, ILogger logger)
@@ -37,6 +38,7 @@ namespace Jellyfin.Plugin.Douban
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
 
+            this._doubanAccessor = new DoubanAccessor(_httpClient);
         }
 
         public Task<HttpResponseInfo> GetImageResponse(string url,
@@ -66,22 +68,11 @@ namespace Jellyfin.Plugin.Douban
 
             // TODO: Change to use the search api instead of parsing by HTML
             // when the search api is available.
-            var url = String.Format("http://www.douban.com/search?cat={0}&q={1}",
-                "1002", name);
-            var options = new HttpRequestOptions
-            {
-                Url = url,
-                CancellationToken = cancellationToken,
-                BufferContent = true,
-                EnableDefaultUserAgent = true,
-            };
-
+            var url = String.Format("http://www.douban.com/search?cat={0}&q={1}", "1002", name);
             try
             {
-                using var response = await _httpClient.GetResponse(options).
-                    ConfigureAwait(false);
-                using var reader = new StreamReader(response.Content);
-                String content = reader.ReadToEnd();
+                String content = await _doubanAccessor.GetResponseWithDelay(url,
+                                 cancellationToken);
                 String pattern = @"sid: (\d+)";
                 Match match = Regex.Match(content, pattern);
 
@@ -125,12 +116,9 @@ namespace Jellyfin.Plugin.Douban
             }
 
             result.Item = TransMediaInfo<T>(data);
-            TransPersonInfo(data.Directors, PersonType.Director).
-                ForEach(result.AddPerson);
-            TransPersonInfo(data.Casts, PersonType.Actor).
-                ForEach(result.AddPerson);
-            TransPersonInfo(data.Writers, PersonType.Writer).
-                ForEach(result.AddPerson);
+            TransPersonInfo(data.Directors, PersonType.Director).ForEach(result.AddPerson);
+            TransPersonInfo(data.Casts, PersonType.Actor).ForEach(result.AddPerson);
+            TransPersonInfo(data.Writers, PersonType.Writer).ForEach(result.AddPerson);
 
             result.QueriedById = true;
             result.HasMetadata = true;
@@ -155,18 +143,10 @@ namespace Jellyfin.Plugin.Douban
             String apikey = _config.ApiKey;
             var url = String.Format("http://api.douban.com/v2/movie/subject" +
                 "/{0}?apikey={1}", sid, apikey);
-            var options = new HttpRequestOptions
-            {
-                Url = url,
-                CancellationToken = cancellationToken,
-                BufferContent = true,
-                EnableDefaultUserAgent = true,
-            };
 
-            var response = await _httpClient.GetResponse(options).
-                ConfigureAwait(false);
-            var data = await _jsonSerializer.DeserializeFromStreamAsync
-                <Response.Subject>(response.Content).ConfigureAwait(false);
+
+            String content = await _doubanAccessor.GetResponse(url, cancellationToken);
+            var data = _jsonSerializer.DeserializeFromString<Response.Subject>(content);
 
             _logger.LogInformation("Get douban subject {0} successfully: {1}",
                                    sid, data.Title);

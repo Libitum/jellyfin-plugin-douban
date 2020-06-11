@@ -83,18 +83,7 @@ namespace Jellyfin.Plugin.Douban
             var url = string.Format("https://movie.douban.com/subject/{0}/photos?" +
                                     "type=W&start=0&sortby=size&size=a&subtype=a", sid);
 
-            var options = new HttpRequestOptions
-            {
-                Url = url,
-                CancellationToken = cancellationToken,
-                BufferContent = true,
-                EnableDefaultUserAgent = true,
-            };
-
-            using var response = await _httpClient.GetResponse(options).
-                    ConfigureAwait(false);
-            using var reader = new StreamReader(response.Content);
-            String content = reader.ReadToEnd();
+            String content = await _doubanAccessor.GetResponseWithDelay(url, cancellationToken);
             const String pattern = @"(?s)data-id=""(\d+)"".*?class=""prop"">\n\s*(\d+)x(\d+)";
             Match match = Regex.Match(content, pattern);
 

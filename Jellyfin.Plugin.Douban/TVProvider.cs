@@ -204,46 +204,34 @@ namespace Jellyfin.Plugin.Douban
                 return result;
             }
             // Start to get information from douban
-            var url = String.Format("https://movie.douban.com/subject/{0}" +
-                "/episode/{1}/", sid, info.IndexNumber);
-            var options = new HttpRequestOptions
-            {
-                Url = url,
-                CancellationToken = cancellationToken,
-                BufferContent = true,
-                EnableDefaultUserAgent = true,
-            };
-
             result.Item = new Episode
             {
                 Name = info.Name,
                 IndexNumber = info.IndexNumber,
                 ParentIndexNumber = info.ParentIndexNumber
             };
-            using (var response = await _httpClient.GetResponse(options).
-                ConfigureAwait(false))
-            using (var reader = new StreamReader(response.Content))
-            {
-                String content = reader.ReadToEnd();
-                String pattern_name = "data-name=\\\"(.*?)\\\"";
-                Match match = Regex.Match(content, pattern_name);
-                if (match.Success)
-                {
-                    var name = match.Groups[1].Value;
-                    _logger.LogDebug("The name is {0}", name);
-                    result.Item.Name = name;
-                }
 
-                String pattern_desc = "data-desc=\\\"(.*?)\\\"";
-                match = Regex.Match(content, pattern_desc);
-                if (match.Success)
-                {
-                    var desc = match.Groups[1].Value;
-                    _logger.LogDebug("The desc is {0}", desc);
-                    result.Item.Overview = desc;
-                }
-                result.HasMetadata = true;
+            var url = String.Format("https://movie.douban.com/subject/{0}" +
+                "/episode/{1}/", sid, info.IndexNumber);
+            String content = await _doubanAccessor.GetResponseWithDelay(url, cancellationToken);
+            String pattern_name = "data-name=\\\"(.*?)\\\"";
+            Match match = Regex.Match(content, pattern_name);
+            if (match.Success)
+            {
+                var name = match.Groups[1].Value;
+                _logger.LogDebug("The name is {0}", name);
+                result.Item.Name = name;
             }
+
+            String pattern_desc = "data-desc=\\\"(.*?)\\\"";
+            match = Regex.Match(content, pattern_desc);
+            if (match.Success)
+            {
+                var desc = match.Groups[1].Value;
+                _logger.LogDebug("The desc is {0}", desc);
+                result.Item.Overview = desc;
+            }
+            result.HasMetadata = true;
 
             return result;
         }
