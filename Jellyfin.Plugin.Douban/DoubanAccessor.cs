@@ -10,6 +10,7 @@ namespace Jellyfin.Plugin.Douban
     {
         private readonly IHttpClient _httpClient;
         private readonly Random _random;
+        // It's used to store the last access time, to reduce the access frequency.
         private long _lastAccessTime;
 
         // Used as the user agent when access Douban.
@@ -53,6 +54,7 @@ namespace Jellyfin.Plugin.Douban
             return content;
         }
 
+        // Delays for some time to reduce the access frequency.
         public async Task<String> GetResponseWithDelay(string url, CancellationToken cancellationToken)
         {
             // Check the time diff to avoid high frequency, which could lead blocked by Douban.
@@ -60,7 +62,7 @@ namespace Jellyfin.Plugin.Douban
             if (time_diff <= 2)
             {
                 // Use a random delay to avoid been blocked.
-                int delay = _random.Next(1000, 4000);
+                int delay = _random.Next(1500, 4000);
                 await Task.Delay(delay, cancellationToken);
             }
 
