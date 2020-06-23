@@ -15,6 +15,7 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Add("User-Agent",
                     "Mozilla/5.0 (X11; Linux i686; rv:64.0) Gecko/20100101 Firefox/64.0");
+            _httpClient.Timeout = TimeSpan.FromSeconds(30);
         }
 
         public async Task<HttpResponseInfo> GetResponse(HttpRequestOptions options)
