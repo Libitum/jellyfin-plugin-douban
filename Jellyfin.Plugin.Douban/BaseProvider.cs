@@ -37,7 +37,8 @@ namespace Jellyfin.Plugin.Douban
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
 
-            this._doubanAccessor = new DoubanAccessor(_httpClient);
+            this._doubanAccessor = DoubanAccessor.Instance;
+            _doubanAccessor.init(_httpClient, _logger);
         }
 
         public Task<HttpResponseInfo> GetImageResponse(string url,
@@ -97,7 +98,7 @@ namespace Jellyfin.Plugin.Douban
             string type, CancellationToken cancellationToken)
             where T : BaseItem, new()
         {
-            _logger.LogInformation("Trying to get item by sid: {0}", sid);
+            _logger.LogInformation("Trying to get item by sid: {0} and type {1}", sid, type);
             var result = new MetadataResult<T>();
 
             if (string.IsNullOrWhiteSpace(sid))

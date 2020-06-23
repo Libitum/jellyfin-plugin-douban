@@ -29,6 +29,7 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
                 ContentType = response.Content.Headers.ContentType.ToString(),
                 Content = content,
                 StatusCode = response.StatusCode,
+                Headers = response.Headers,
             };
 
             return responseInfo;

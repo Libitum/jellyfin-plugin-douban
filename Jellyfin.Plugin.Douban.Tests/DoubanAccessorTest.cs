@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
 using System.Threading;
 using Jellyfin.Plugin.Douban.Tests.Mock;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,13 +15,15 @@ namespace Jellyfin.Plugin.Douban.Tests
         public DoubanAccessorTest()
         {
             var httpClient = new MockHttpClient();
-            _accessor = new DoubanAccessor(httpClient);
 
-            var serviceProvider = new ServiceCollection()
-                                  .AddLogging(builder => builder.AddConsole())
-                                  .BuildServiceProvider();
-            var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
-            this._logger = loggerFactory.CreateLogger("test");
+            _logger = new ServiceCollection()
+                           .AddLogging(builder => builder.AddConsole())
+                           .BuildServiceProvider()
+                           .GetRequiredService<ILoggerFactory>()
+                           .CreateLogger("test");
+
+            _accessor = DoubanAccessor.Instance;
+            _accessor.init(httpClient, _logger);
         }
 
         [Fact]

@@ -1,17 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.Net;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Douban
 {
     public class DoubanAccessor
     {
-        private readonly IHttpClient _httpClient;
+        private IHttpClient _httpClient;
+        private ILogger _logger;
+
         private readonly Random _random;
         // It's used to store the last access time, to reduce the access frequency.
         private long _lastAccessTime;
+
+        private string _doubanBid;
 
         // Used as the user agent when access Douban.
         private readonly string[] _userAgentList = {
@@ -28,11 +35,31 @@ namespace Jellyfin.Plugin.Douban
             "Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1467.0 Safari/537.36"
         };
 
-        public DoubanAccessor(IHttpClient httpClient)
+        // Use Singleton to avoid get cookie muiti-times. 
+        public static readonly DoubanAccessor Instance = new DoubanAccessor();
+
+        static DoubanAccessor() { }
+        private DoubanAccessor()
         {
-            _httpClient = httpClient;
+            _httpClient = null;
+            _logger = null;
             _lastAccessTime = 0;
             _random = new Random();
+        }
+
+        public void init(IHttpClient client, ILogger logger)
+        {
+            lock (this)
+            {
+                if (_httpClient == null)
+                {
+                    _httpClient = client;
+                }
+                if (_logger == null)
+                {
+                    _logger = logger;
+                }
+            }
         }
 
         public async Task<String> GetResponse(string url, CancellationToken cancellationToken)
@@ -42,10 +69,29 @@ namespace Jellyfin.Plugin.Douban
                 Url = url,
                 CancellationToken = cancellationToken,
                 BufferContent = true,
-                UserAgent = _userAgentList[_random.Next(_userAgentList.Length)],
+                //UserAgent = _userAgentList[_random.Next(_userAgentList.Length)],
+                UserAgent = _userAgentList[0],
             };
 
+            if (!string.IsNullOrEmpty(_doubanBid))
+            {
+                options.RequestHeaders.Add("Cookie", String.Format("bid={0}", _doubanBid));
+            }
+
             using var response = await _httpClient.GetResponse(options).ConfigureAwait(false);
+
+            // For test
+            foreach (var h in response.Headers)
+            {
+                _logger.LogError("Douban header key:{0}", h.Key);
+            }
+
+            if (response.Headers.TryGetValues("X-DOUBAN-NEWBID", out IEnumerable<string> value))
+            {
+                _logger.LogError("Douban bid is: {0}", value.FirstOrDefault());
+                _doubanBid = value.FirstOrDefault();
+            }
+
             using var reader = new StreamReader(response.Content);
             String content = reader.ReadToEnd();
 
