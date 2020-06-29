@@ -71,7 +71,7 @@ namespace Jellyfin.Plugin.Douban
 
             if (response.Headers.TryGetValues("X-DOUBAN-NEWBID", out IEnumerable<string> value))
             {
-                _logger.LogError("Douban bid is: {0}", value.FirstOrDefault());
+                _logger.LogInformation("Douban bid is: {0}", value.FirstOrDefault());
                 _doubanBid = value.FirstOrDefault();
             }
 

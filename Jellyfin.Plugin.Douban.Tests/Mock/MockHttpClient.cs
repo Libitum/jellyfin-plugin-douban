@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using MediaBrowser.Common.Net;
+using ServiceStack.Text;
 
 namespace Jellyfin.Plugin.Douban.Tests.Mock
 {
@@ -13,13 +14,19 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
         public MockHttpClient()
         {
             _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add("User-Agent",
-                    "Mozilla/5.0 (X11; Linux i686; rv:64.0) Gecko/20100101 Firefox/64.0");
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
         }
 
         public async Task<HttpResponseInfo> GetResponse(HttpRequestOptions options)
         {
+            _httpClient.DefaultRequestHeaders.UserAgent.Clear();
+            _httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd(options.UserAgent);
+            if (options.RequestHeaders.ContainsKey("Cookie"))
+            {
+                _httpClient.DefaultRequestHeaders.Add("Cookie",
+                                                      options.RequestHeaders.Get("Cookie"));
+            }    
+
             HttpResponseMessage response = await _httpClient.GetAsync(options.Url,
                                                                       options.CancellationToken);
             response.EnsureSuccessStatusCode();

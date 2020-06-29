@@ -39,7 +39,6 @@ namespace Jellyfin.Plugin.Douban.Tests
             Assert.False(meta.HasMetadata);
 
             // Test 2: can not get the result.
-            /*
             info = new MovieInfo()
             {
                 MetadataLanguage = "zh",
@@ -47,7 +46,6 @@ namespace Jellyfin.Plugin.Douban.Tests
             };
             meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
             Assert.False(meta.HasMetadata);
-            */
 
             // Test 3: get meta successfully
             info = new MovieInfo()
