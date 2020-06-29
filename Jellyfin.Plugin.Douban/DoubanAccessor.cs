@@ -11,13 +11,15 @@ namespace Jellyfin.Plugin.Douban
 {
     public class DoubanAccessor
     {
-        private IHttpClient _httpClient;
-        private ILogger _logger;
+        private readonly IHttpClient _httpClient;
+        private readonly ILogger _logger;
 
         private readonly Random _random;
         // It's used to store the last access time, to reduce the access frequency.
-        private long _lastAccessTime;
+        private static long _lastAccessTime;
+        private static SemaphoreSlim _locker = new SemaphoreSlim(1, 1);
 
+        // It's used to store the value of BID in cookie.
         private string _doubanBid;
 
         // Used as the user agent when access Douban.
@@ -35,31 +37,12 @@ namespace Jellyfin.Plugin.Douban
             "Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1467.0 Safari/537.36"
         };
 
-        // Use Singleton to avoid get cookie muiti-times. 
-        public static readonly DoubanAccessor Instance = new DoubanAccessor();
-
-        static DoubanAccessor() { }
-        private DoubanAccessor()
+        public DoubanAccessor(IHttpClient client, ILogger logger)
         {
-            _httpClient = null;
-            _logger = null;
+            _httpClient = client;
+            _logger = logger;
             _lastAccessTime = 0;
             _random = new Random();
-        }
-
-        public void init(IHttpClient client, ILogger logger)
-        {
-            lock (this)
-            {
-                if (_httpClient == null)
-                {
-                    _httpClient = client;
-                }
-                if (_logger == null)
-                {
-                    _logger = logger;
-                }
-            }
         }
 
         public async Task<String> GetResponse(string url, CancellationToken cancellationToken)
@@ -95,24 +78,34 @@ namespace Jellyfin.Plugin.Douban
             using var reader = new StreamReader(response.Content);
             String content = reader.ReadToEnd();
 
-            // Update last access time to now.
-            _lastAccessTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            
             return content;
         }
 
         // Delays for some time to reduce the access frequency.
         public async Task<String> GetResponseWithDelay(string url, CancellationToken cancellationToken)
         {
-            // Check the time diff to avoid high frequency, which could lead blocked by Douban.
-            long time_diff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _lastAccessTime;
-            if (time_diff <= 2)
+            await _locker.WaitAsync();
+            try
             {
-                // Use a random delay to avoid been blocked.
-                int delay = _random.Next(1500, 4000);
-                await Task.Delay(delay, cancellationToken);
-            }
+                // Check the time diff to avoid high frequency, which could lead blocked by Douban.
+                long time_diff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _lastAccessTime;
+                if (time_diff <= 2)
+                {
+                    // Use a random delay to avoid been blocked.
+                    int delay = _random.Next(1500, 4000);
+                    await Task.Delay(delay, cancellationToken);
+                }
 
-            return await GetResponse(url, cancellationToken);
+                var content = await GetResponse(url, cancellationToken);
+                // Update last access time to now.
+                _lastAccessTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                return content;
+            }
+            finally
+            {
+                _locker.Release();
+            }
         }
     }
 }

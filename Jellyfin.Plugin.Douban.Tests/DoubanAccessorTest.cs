@@ -22,8 +22,7 @@ namespace Jellyfin.Plugin.Douban.Tests
                            .GetRequiredService<ILoggerFactory>()
                            .CreateLogger("test");
 
-            _accessor = DoubanAccessor.Instance;
-            _accessor.init(httpClient, _logger);
+            _accessor = new DoubanAccessor(httpClient, _logger);
         }
 
         [Fact]

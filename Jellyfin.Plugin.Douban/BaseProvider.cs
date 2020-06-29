@@ -37,8 +37,7 @@ namespace Jellyfin.Plugin.Douban
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
 
-            this._doubanAccessor = DoubanAccessor.Instance;
-            _doubanAccessor.init(_httpClient, _logger);
+            this._doubanAccessor = new DoubanAccessor(_httpClient, _logger);
         }
 
         public Task<HttpResponseInfo> GetImageResponse(string url,
