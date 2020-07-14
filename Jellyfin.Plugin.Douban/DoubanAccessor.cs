@@ -13,6 +13,7 @@ namespace Jellyfin.Plugin.Douban
     {
         private readonly IHttpClient _httpClient;
         private readonly ILogger _logger;
+        private readonly int _minRequestInternalMs;
 
         private static readonly Random _random = new Random();
         // It's used to store the last access time, to reduce the access frequency.
@@ -41,9 +42,15 @@ namespace Jellyfin.Plugin.Douban
         private static readonly string _userAgent = _userAgentList[_random.Next(_userAgentList.Length)];
 
         public DoubanAccessor(IHttpClient client, ILogger logger)
+            : this(client, logger, 2000)
+        {
+        }
+
+        public DoubanAccessor(IHttpClient client, ILogger logger, int minRequestInternalMs)
         {
             _httpClient = client;
             _logger = logger;
+            _minRequestInternalMs = minRequestInternalMs;
         }
 
         public async Task<String> GetResponse(string url, CancellationToken cancellationToken)
@@ -85,17 +92,20 @@ namespace Jellyfin.Plugin.Douban
             try
             {
                 // Check the time diff to avoid high frequency, which could lead blocked by Douban.
-                long time_diff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _lastAccessTime;
-                if (time_diff <= 2)
+                if (_minRequestInternalMs > 0)
                 {
-                    // Use a random delay to avoid been blocked.
-                    int delay = _random.Next(1500, 4000);
-                    await Task.Delay(delay, cancellationToken);
+                    long time_diff = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - _lastAccessTime;
+                    if (time_diff <= _minRequestInternalMs)
+                    {
+                        // Use a random delay to avoid been blocked.
+                        int delay = _random.Next(_minRequestInternalMs, _minRequestInternalMs + 2000);
+                        await Task.Delay(delay, cancellationToken);
+                    }
                 }
 
                 var content = await GetResponse(url, cancellationToken);
                 // Update last access time to now.
-                _lastAccessTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                _lastAccessTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 return content;
             }
             finally

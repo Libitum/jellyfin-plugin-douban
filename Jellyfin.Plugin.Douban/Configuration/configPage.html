@@ -14,6 +14,11 @@
                         <input id="ApiKey" name="ApiKey" type="text" is="emby-input" />
                         <div class="fieldDescription">Api Key for the Douban api</div>
                     </div>
+                    <div class="inputContainer">
+                        <label class="inputeLabel inputLabelUnfocused" for="MinRequestInternalMs">Minimum request Internal(ms)</label>
+                        <input id="MinRequestInternalMs" name="MinRequestInternalMs" type="number" is="emby-input" min="0" />
+                        <div class="fieldDescription">Minimum request Internal 最小请求间隔，单位为毫秒</div>
+                    </div>
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block emby-button">
                             <span>Save</span>
@@ -31,6 +36,7 @@
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(DoubanProviderConfig.pluginUniqueId).then(function (config) {
                     $('#ApiKey').val(config.ApiKey).change();
+                    $('#MinRequestInternalMs').val(config.MinRequestInternalMs).change();
                     Dashboard.hideLoadingMsg();
                 });
             });
@@ -39,6 +45,7 @@
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(DoubanProviderConfig.pluginUniqueId).then(function (config) {
                     config.ApiKey = $('#ApiKey').val();
+                    config.MinRequestInternalMs = $('#MinRequestInternalMs').val();
                     ApiClient.updatePluginConfiguration(DoubanProviderConfig.pluginUniqueId, config).then(function (result) {
                         Dashboard.processPluginConfigurationUpdateResult(result);
                     });
