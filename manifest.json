@@ -1,0 +1,20 @@
+[
+    {
+        "category": "Metadata",
+        "guid": "e325b8d5-5f54-447f-a38a-a951b933d22c",
+        "name": "Douban",
+        "description": "Get Movie/TV information from Douban",
+        "owner": "Libitum",
+        "overview": "Manage Your Movie/TV by Douban",
+        "versions": [
+            {
+                "checksum": "617aa6a482523cd5d8ea8073f17e5e3a",
+                "changelog": "Solve the problem of been blocked by Douban when access with high frequency",
+                "targetAbi": "10.5.0.0",
+                "sourceUrl": "https://github.com/Libitum/jellyfin-plugin-douban/releases/download/v0.6.0/Jellyfin.Plugin.Douban.zip",
+                "timestamp": "2020-06-23 18:00:00",
+                "version": "0.6.0.0"
+            }
+        ]
+    }
+]
