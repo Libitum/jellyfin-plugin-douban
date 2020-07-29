@@ -14,6 +14,13 @@ for movies and TV series from Douban, including rating, summary, casts, etc.
 
 ## 2. Usage
 
+In Jellyfin v10.6.0 or newer version, you can install this plugin by adding repository directly.
+
+Repository URL: https://raw.githubusercontent.com/Libitum/jellyfin-plugin-douban/master/manifest.json
+
+
+For version older than v10.6.0, please try the way below:
+
 1. Download from release page or compile by yourself.
 2. Decompress the package, and put the "Douban" directory as the subdirectory of
    "plugins" in Jellyfin.
@@ -66,6 +73,13 @@ has no posters without this setting.
 演员等相关信息。
 
 ## 2. 使用方式
+
+对于 v10.6.0 以及更新的 Jellyfin 版本，可以通过添加插件仓库的方式安装。
+
+插件仓库地址：https://raw.githubusercontent.com/Libitum/jellyfin-plugin-douban/master/manifest.json
+
+
+对于 v10.5.x 及之前的版本，请参考以下方式进行安装：
 
 1. 从 Release 页面下载最新的版本，或者自行编译。
 2. 把下载的文件解压，然后将 Douban 文件夹放到 Jellyfin 的 "plugins" 目录下。
