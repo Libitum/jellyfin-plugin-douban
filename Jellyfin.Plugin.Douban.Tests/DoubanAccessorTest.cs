@@ -21,7 +21,7 @@ namespace Jellyfin.Plugin.Douban.Tests
                            .AddLogging(builder => builder.AddConsole())
                            .BuildServiceProvider()
                            .GetRequiredService<ILoggerFactory>()
-                           .CreateLogger("test");            
+                           .CreateLogger<DoubanAccessor>();
         }
 
         [Fact]

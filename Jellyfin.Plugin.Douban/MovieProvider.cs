@@ -21,7 +21,7 @@ namespace Jellyfin.Plugin.Douban
 
         public MovieProvider(IHttpClient httpClient,
                               IJsonSerializer jsonSerializer,
-                              ILogger logger) : base(httpClient, jsonSerializer, logger)
+                              ILogger<MovieProvider> logger) : base(httpClient, jsonSerializer, logger)
         {
             // Empty
         }

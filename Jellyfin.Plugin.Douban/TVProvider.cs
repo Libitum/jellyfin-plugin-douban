@@ -24,7 +24,7 @@ namespace Jellyfin.Plugin.Douban
 
         public TVProvider(IHttpClient httpClient,
                           IJsonSerializer jsonSerializer,
-                          ILogger logger) : base(httpClient, jsonSerializer, logger)
+                          ILogger<TVProvider> logger) : base(httpClient, jsonSerializer, logger)
         {
             // empty
         }

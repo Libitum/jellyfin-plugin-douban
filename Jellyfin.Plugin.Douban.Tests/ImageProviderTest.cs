@@ -17,7 +17,7 @@ namespace Jellyfin.Plugin.Douban.Tests
             _serviceProvider = new ServiceCollection().AddLogging(builder => builder.AddConsole())
                                                       .BuildServiceProvider();
             var loggerFactory = _serviceProvider.GetService<ILoggerFactory>();
-            var logger = loggerFactory.CreateLogger("test");
+            var logger = loggerFactory.CreateLogger<ImageProvider>();
 
             var httpClient = new MockHttpClient();
             var jsonSerializer = new MockJsonSerializer();

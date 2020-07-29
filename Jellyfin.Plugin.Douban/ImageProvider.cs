@@ -24,7 +24,7 @@ namespace Jellyfin.Plugin.Douban
 
         public ImageProvider(IHttpClient httpClient,
                              IJsonSerializer jsonSerializer,
-                             ILogger logger) : base(httpClient, jsonSerializer, logger)
+                             ILogger<ImageProvider> logger) : base(httpClient, jsonSerializer, logger)
         {
             // empty
         }
