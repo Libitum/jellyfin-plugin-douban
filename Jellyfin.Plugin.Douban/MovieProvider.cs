@@ -31,14 +31,6 @@ namespace Jellyfin.Plugin.Douban
         {
             _logger.LogInformation($"Douban:GetMetadata movie name: {info.Name}");
 
-            // Only handle it when language is "zh"
-            if (info.MetadataLanguage != "zh")
-            {
-                _logger.LogInformation("DoubanProvider: the required " +
-                    "language is not zh, so just bypass DoubanProvider");
-                return new MetadataResult<Movie>();
-            }
-
             var sid = info.GetProviderId(ProviderID);
             if (string.IsNullOrWhiteSpace(sid))
             {
@@ -70,14 +62,6 @@ namespace Jellyfin.Plugin.Douban
             _logger.LogInformation("Douban: search name {0}", info.Name);
 
             var results = new List<RemoteSearchResult>();
-
-            // Only handle it when language is "zh"
-            if (info.MetadataLanguage != "zh")
-            {
-                _logger.LogInformation("DoubanProvider: the required " +
-                    "language is not zh, so just bypass DoubanProvider");
-                return results;
-            }
 
             IEnumerable<string> sidList;
 

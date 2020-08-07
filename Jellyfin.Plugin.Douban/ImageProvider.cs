@@ -92,7 +92,7 @@ namespace Jellyfin.Plugin.Douban
                 string data_id = match.Groups[1].Value;
                 string width = match.Groups[2].Value;
                 string height = match.Groups[3].Value;
-                _logger.LogDebug("Find backdrip id {0}, size {1}x{2}", data_id, width, height);
+                _logger.LogInformation("Find backdrip id {0}, size {1}x{2}", data_id, width, height);
 
                 if (float.Parse(width) > float.Parse(height) * 1.3)
                 {
