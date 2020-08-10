@@ -91,7 +91,8 @@ namespace Jellyfin.Plugin.Douban
                                  url, e.StatusCode);
                 throw e;
             }
-            return sidList.Distinct().ToList();
+            // To avoid timeout by too many search results, just limit the result to 7.
+            return sidList.Distinct().Take(7).ToList();
         }
 
         protected async Task<MetadataResult<T>> GetMetaFromDouban<T>(string sid,
