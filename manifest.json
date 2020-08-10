@@ -8,6 +8,13 @@
         "overview": "Manage Your Movie/TV by Douban",
         "versions": [
             {
+                "checksum": "4e7782ea4d613a61e65096399b723060",
+                "changelog": "Fix two bugs when using Identify.",
+                "targetAbi": "10.6.0.0",
+                "sourceUrl": "https://github.com/Libitum/jellyfin-plugin-douban/releases/download/v1.0.1/Jellyfin.Plugin.Douban.zip",
+                "timestamp": "2020-08-10 20:52:00",
+                "version": "1.0.1.0"
+            },{
                 "checksum": "b1c4453ce2af189d93d2302a16cef503",
                 "changelog": "Make the plugin compatible with Jellyfin 10.6.0.",
                 "targetAbi": "10.6.0.0",
