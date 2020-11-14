@@ -20,7 +20,7 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
         public async Task<HttpResponseInfo> GetResponse(HttpRequestOptions options)
         {
             _httpClient.DefaultRequestHeaders.UserAgent.Clear();
-            _httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd(options.UserAgent);
+            _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", options.UserAgent);
             if (options.RequestHeaders.ContainsKey("Cookie"))
             {
                 _httpClient.DefaultRequestHeaders.Add("Cookie",

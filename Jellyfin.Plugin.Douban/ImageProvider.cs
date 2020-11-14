@@ -36,13 +36,13 @@ namespace Jellyfin.Plugin.Douban
             var sid = item.GetProviderId(ProviderID);
             if (string.IsNullOrWhiteSpace(sid))
             {
-                // Not by douban
-                _logger.LogWarning("GetImages failed because that the sid " +
-                    "is empty: {Name}", item.Name);
+                _logger.LogWarning($"[DOUBAN WARN] Got images failed because the sid of \"{item.Name}\" is empty!");
                 return list;
             }
-            var primaryList = await GetPrimary(sid, cancellationToken);
+
+            var primaryList = await GetPrimary(sid, item is Movie ? "movie" : "tv", cancellationToken);
             var backdropList = await GetBackdrop(sid, cancellationToken);
+
             list.AddRange(primaryList);
             list.AddRange(backdropList);
 
@@ -63,19 +63,20 @@ namespace Jellyfin.Plugin.Douban
             };
         }
 
-        public async Task<IEnumerable<RemoteImageInfo>> GetPrimary(string sid,
+        public async Task<IEnumerable<RemoteImageInfo>> GetPrimary(string sid, string type,
             CancellationToken cancellationToken)
         {
             var list = new List<RemoteImageInfo>();
-            var movie = await GetDoubanSubject(sid, cancellationToken);
+            var item = await GetFrodoSubject(sid, type, cancellationToken);
             list.Add(new RemoteImageInfo
             {
                 ProviderName = Name,
-                Url = movie.Images.Large,
+                Url = item.Pic.Large,
                 Type = ImageType.Primary
             });
             return list;
         }
+
         public async Task<IEnumerable<RemoteImageInfo>> GetBackdrop(string sid,
             CancellationToken cancellationToken)
         {
@@ -92,7 +93,7 @@ namespace Jellyfin.Plugin.Douban
                 string data_id = match.Groups[1].Value;
                 string width = match.Groups[2].Value;
                 string height = match.Groups[3].Value;
-                _logger.LogInformation("Find backdrip id {0}, size {1}x{2}", data_id, width, height);
+                _logger.LogInformation("Find backdrop id {0}, size {1}x{2}", data_id, width, height);
 
                 if (float.Parse(width) > float.Parse(height) * 1.3)
                 {

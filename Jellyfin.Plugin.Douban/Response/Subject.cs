@@ -2,44 +2,57 @@ using System.Collections.Generic;
 
 namespace Jellyfin.Plugin.Douban.Response
 {
-    internal class Subject
+    public class Subject
     {
+        public string Id { get; set; }
         public string Title { get; set; }
         public string Original_Title { get; set; }
+        public string Intro { get; set; }
         public string Summary { get; set; }
         public string Year { get; set; }
-        public string Pubdate { get; set; }
+        public List<string> Pubdate { get; set; }
         public Rating Rating { get; set; }
-        public Avatar Images { get; set; }
-        public string Alt { get; set; }
+        public Image Pic { get; set; }
+        public string Url { get; set; }
         public List<string> Countries { get; set; }
-        public List<string> Trailer_Urls { get; set; }
-        public List<PersonInfo> Directors { get; set; }
-        public List<PersonInfo> Writers { get; set; }
-        public List<PersonInfo> Casts { get; set; }
+        public Trailer Trailer { get; set; }
+        public List<Crew> Directors { get; set; }
+        public List<Crew> Actors { get; set; }
         public List<string> Genres { get; set; }
         public string Subtype { get; set; }
-        // season information
-        public int? Seasons_Count { get; set; }
-        public int? Current_Season { get; set; }
-        public int? Episodes_Count { get; set; }
+        public bool Is_Tv { get; set; }
     }
 
-    internal class Rating
+    public class Rating
     {
-        public float Average { get; set; }
+        public float Value { get; set; }
+        public float Star_Count { get; set; }
     }
 
-    internal class PersonInfo
+    public class Crew
     {
         public string Name { get; set; }
-        public string Alt { get; set; }
+        public string Url { get; set; }
         public string Id { get; set; }
-        public Avatar Avatars { get; set; }
+        public Image Avatar { get; set; }
+        public List<string> Roles { get; set; }
+        public string Title { get; set; }
+        public string Abstract { get; set; }
+        public string Type { get; set; }
     }
 
-    internal class Avatar
+    public class Image
     {
         public string Large { get; set; }
+        public string Normal { get; set; }
+    }
+
+    public class Trailer
+    {
+        public string Video_Url { get; set; }
+        public string Title { get; set; }
+        public string Subject_Title { get; set; }
+        public string Runtime { get; set; }
+        public string Cover_Url { get; set; }
     }
 }

@@ -26,45 +26,28 @@ namespace Jellyfin.Plugin.Douban.Tests
         }
 
         [Fact]
-        public void TestGetMetadata()
+        public void TestSearchMovie()
+        {
+            // Test 1: search metadata.
+            MovieInfo info = new MovieInfo()
+            {
+                Name = "蝙蝠侠：黑暗骑士",
+            };
+
+            var result = _doubanProvider.GetSearchResults(info, CancellationToken.None).Result;
+            Assert.NotEmpty(result);
+        }
+
+        [Fact]
+        public void TestGetMovieMetadata()
         {
             MovieInfo info = new MovieInfo()
             {
-                Name = "龙猫",
-                MetadataLanguage = "en",
+                Name = "Source Code"
             };
-
-            // Test 1: language is not "zh". We just ignore this right now.
             var meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
             Assert.True(meta.HasMetadata);
-
-            // Test 2: can not get the result.
-            info = new MovieInfo()
-            {
-                MetadataLanguage = "zh",
-                Name = "asdflkjhsadf"
-            };
-            meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
-            Assert.False(meta.HasMetadata);
-
-            // Test 3: get meta successfully
-            info = new MovieInfo()
-            {
-                MetadataLanguage = "zh",
-                Name = "龙猫"
-            };
-            meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
-            Assert.True(meta.HasMetadata);
-            Assert.Equal("龙猫", meta.Item.Name);
-
-            // Test 4: get it but it's not movie type
-            info = new MovieInfo()
-            {
-                MetadataLanguage = "zh",
-                Name = "三国演义"
-            };
-            meta = _doubanProvider.GetMetadata(info, CancellationToken.None).Result;
-            Assert.False(meta.HasMetadata);
+            Assert.Equal("源代码", meta.Item.Name);
         }
     }
 }
