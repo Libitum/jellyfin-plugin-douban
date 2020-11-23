@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -16,12 +15,12 @@ namespace Jellyfin.Plugin.Douban
     public class MovieProvider : BaseProvider, IHasOrder,
         IRemoteMetadataProvider<Movie, MovieInfo>
     {
-        public String Name => "Douban Movie Provider";
+        public string Name => "Douban Movie Provider";
         public int Order => 3;
 
         public MovieProvider(IHttpClient httpClient,
-                              IJsonSerializer jsonSerializer,
-                              ILogger<MovieProvider> logger) : base(httpClient, jsonSerializer, logger)
+            IJsonSerializer jsonSerializer,
+            ILogger<MovieProvider> logger) : base(httpClient, jsonSerializer, logger)
         {
             // Empty
         }
@@ -29,27 +28,27 @@ namespace Jellyfin.Plugin.Douban
         public async Task<MetadataResult<Movie>> GetMetadata(MovieInfo info,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Douban:GetMetadata movie name: {info.Name}");
+            _logger.LogInformation($"[DOUBAN FRODO INFO] Getting metadata for \"{info.Name}\"");
 
             var sid = info.GetProviderId(ProviderID);
             if (string.IsNullOrWhiteSpace(sid))
             {
-                // Get subject id firstly
-                var sidList = await SearchSidByName(info.Name,
+                var searchResults = await SearchFrodoByName(info.Name, "movie",
                     cancellationToken).ConfigureAwait(false);
-                sid = sidList.FirstOrDefault();
+                sid = searchResults.FirstOrDefault()?.Id;
             }
 
             if (string.IsNullOrWhiteSpace(sid))
             {
-                // Not found, just return
+                _logger.LogError($"[DOUBAN FRODO ERROR] No sid found for \"{info.Name}\"");
                 return new MetadataResult<Movie>();
             }
 
-            var result = await GetMetaFromDouban<Movie>(sid, "movie",
+            var result = await GetMetaFromFrodo<Movie>(sid, "movie",
                 cancellationToken).ConfigureAwait(false);
             if (result.HasMetadata)
             {
+                _logger.LogInformation($"[DOUBAN FRODO INFO] Get the metadata of \"{info.Name}\" successfully!");
                 info.SetProviderId(ProviderID, sid);
             }
 
@@ -59,44 +58,32 @@ namespace Jellyfin.Plugin.Douban
         public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
             MovieInfo info, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Douban: search name {0}", info.Name);
+            _logger.LogInformation($"[DOUBAN FRODO INFO] Searching \"{info.Name}\"");
 
             var results = new List<RemoteSearchResult>();
 
-            IEnumerable<string> sidList;
+            var searchResults = new List<Response.SearchTarget>();
 
-            string doubanId = info.GetProviderId(ProviderID);
-            _logger.LogInformation("douban id is {0}", doubanId);
-            if (!string.IsNullOrEmpty(doubanId))
+            string sid = info.GetProviderId(ProviderID);
+            if (!string.IsNullOrEmpty(sid))
             {
-                sidList = new List<string>
-                {
-                    doubanId
-                };
+                searchResults.Add(FrodoUtils.MapSubjectToSearchTarget(await GetFrodoSubject(sid, "movie", cancellationToken)));
             }
             else
             {
-                sidList = await SearchSidByName(info.Name, cancellationToken).
-                    ConfigureAwait(false);
+                searchResults = await SearchFrodoByName(info.Name, "movie", cancellationToken).
+                ConfigureAwait(false);
             }
 
-            foreach (String sid in sidList)
+            foreach (Response.SearchTarget searchTarget in searchResults)
             {
-                var subject = await GetDoubanSubject(sid, cancellationToken).
-                    ConfigureAwait(false);
-                if (subject.Subtype != "movie")
-                {
-                    continue;
-                }
-
                 var searchResult = new RemoteSearchResult()
                 {
-                    Name = subject.Title,
-                    ImageUrl = subject.Images.Large,
-                    Overview = subject.Summary,
-                    ProductionYear = int.Parse(subject.Year),
+                    Name = searchTarget?.Title,
+                    ImageUrl = searchTarget?.Cover_Url,
+                    ProductionYear = int.Parse(searchTarget?.Year)
                 };
-                searchResult.SetProviderId(ProviderID, sid);
+                searchResult.SetProviderId(ProviderID, searchTarget.Id);
                 results.Add(searchResult);
             }
 

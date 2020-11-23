@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,9 +40,9 @@ namespace Jellyfin.Plugin.Douban
         }
 
         public Task<HttpResponseInfo> GetImageResponse(string url,
-            CancellationToken cancellationToken)
+           CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Douban:GetImageResponse url: {0}", url);
+            _logger.LogInformation("[DOUBAN INFO] GetImageResponse url: {0}", url);
             return _httpClient.GetResponse(new HttpRequestOptions
             {
                 Url = url,
@@ -52,150 +50,105 @@ namespace Jellyfin.Plugin.Douban
             });
         }
 
-        protected async Task<IEnumerable<string>> SearchSidByName(string name,
+        public async Task<List<Response.SearchTarget>> SearchFrodoByName(string name, string type,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Douban: Trying to search sid by name: {0}",
-                                   name);
+            _logger.LogInformation($"[DOUBAN FRODO INFO] Searching for sid of {type} named \"{name}\"");
 
-            var sidList = new List<string>();
+            var searchResults = new List<Response.SearchTarget>();
 
-            if (String.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(name))
             {
-                _logger.LogWarning("Search name is empty.");
-                return sidList;
+                _logger.LogWarning($"[DOUBAN FRODO WARN] Search name is empty.");
+                return searchResults;
             }
 
-            // TODO: Change to use the search api instead of parsing by HTML
-            // when the search api is available.
-            var url = String.Format("http://www.douban.com/search?cat={0}&q={1}", "1002", name);
+            name = string.Join(" ", name.Split("."));
+
+            SearchCache searchCache = SearchCache.Instance;
+            string searchId = $"{name}-{type}";
+            if (searchCache.Has(searchId))
+            {
+                _logger.LogInformation($"[DOUBAN FRODO INFO] Found search cache.");
+                return searchCache.searchResult;
+            }
+
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            queryParams.Add("q", name);
+            queryParams.Add("count", $"{FrodoUtils.MaxSearchCount}");
+
             try
             {
-                String content = await _doubanAccessor.GetResponseWithDelay(url,
-                                 cancellationToken);
-                String pattern = @"sid: (\d+)";
-                Match match = Regex.Match(content, pattern);
-
-                while (match.Success)
+                var response = await _doubanAccessor.RequestFrodo(FrodoUtils.SearchApi, queryParams,
+                    cancellationToken);
+                Response.SearchResult result = _jsonSerializer.DeserializeFromString<Response.SearchResult>(response);
+                if (result.Total > 0)
                 {
-                    var sid = match.Groups[1].Value;
-                    _logger.LogDebug("The sid of {0} is {1}", name, sid);
-                    sidList.Add(sid);
-
-                    match = match.NextMatch();
+                    foreach (Response.SearchSubject subject in result.Items)
+                    {
+                        if (subject.Target_Type == type)
+                        {
+                            searchResults.Add(subject.Target);
+                        }
+                    }
+                    if (searchResults.Count == 0)
+                    {
+                        _logger.LogWarning($"[DOUBAN FRODO WARN] Seems like \"{name}\" genre is not {type}.");
+                    }
+                }
+                else
+                {
+                    _logger.LogError($"[DOUBAN FRODO ERR] No results found for \"{name}\".");
                 }
             }
             catch (HttpException e)
             {
-                _logger.LogError("Could not access url: {0}, status code: {1}",
-                                 url, e.StatusCode);
+                _logger.LogError($"[DOUBAN FRODO ERR] Search \"{name}\" error, got {e.StatusCode}.");
                 throw e;
             }
-            // To avoid timeout by too many search results, just limit the result to 7.
-            return sidList.Distinct().Take(7).ToList();
+
+            searchCache.SetSearchCache(searchId, searchResults);
+
+            return searchResults;
         }
 
-        protected async Task<MetadataResult<T>> GetMetaFromDouban<T>(string sid,
+        protected async Task<MetadataResult<T>> GetMetaFromFrodo<T>(string sid,
             string type, CancellationToken cancellationToken)
-            where T : BaseItem, new()
+        where T : BaseItem, new()
         {
-            _logger.LogInformation("Trying to get item by sid: {0} and type {1}", sid, type);
             var result = new MetadataResult<T>();
 
-            if (string.IsNullOrWhiteSpace(sid))
-            {
-                _logger.LogWarning("Can not get movie item, sid is empty");
-                return result;
-            }
+            var subject = await GetFrodoSubject(sid, type, cancellationToken);
 
-            var data = await GetDoubanSubject(sid, cancellationToken);
-            if (!String.IsNullOrEmpty(type) && data.Subtype != type)
-            {
-                _logger.LogInformation("Douban: Sid {1}'s type is {2}, " +
-                    "but require {3}", sid, data.Subtype, type);
-                return result;
-            }
-
-            result.Item = TransMediaInfo<T>(data);
-            TransPersonInfo(data.Directors, PersonType.Director).ForEach(result.AddPerson);
-            TransPersonInfo(data.Casts, PersonType.Actor).ForEach(result.AddPerson);
-            TransPersonInfo(data.Writers, PersonType.Writer).ForEach(result.AddPerson);
+            result.Item = FrodoUtils.MapSubjectToItem<T>(subject);
+            result.Item.SetProviderId(ProviderID, sid);
+            FrodoUtils.MapCrewToPersons(subject.Directors, PersonType.Director).ForEach(result.AddPerson);
+            FrodoUtils.MapCrewToPersons(subject.Actors, PersonType.Actor).ForEach(result.AddPerson);
 
             result.QueriedById = true;
             result.HasMetadata = true;
 
-            _logger.LogInformation("Douban: The name of sid {0} is {1}",
-                sid, result.Item.Name);
+
             return result;
         }
 
-        internal async Task<Response.Subject> GetDoubanSubject(string sid,
-                                         CancellationToken cancellationToken)
+        internal async Task<Response.Subject> GetFrodoSubject(string sid, string type,
+            CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Douban: Trying to get douban subject by " +
-                "sid: {0}", sid);
-            cancellationToken.ThrowIfCancellationRequested();
+            _logger.LogInformation($"[DOUBAN FRODO INFO] Getting the douban subject with sid \"{sid}\"");
 
-            if (string.IsNullOrWhiteSpace(sid))
+            SubjectCache subjectCache = SubjectCache.Instance;
+
+            if (subjectCache.Has(sid))
             {
-                throw new ArgumentException("sid is empty when getting subject");
+                _logger.LogInformation($"[DOUBAN FRODO INFO] Found cache.");
+                return subjectCache.subject;
             }
 
-            String apikey = _config.ApiKey;
-            var url = String.Format("http://api.douban.com/v2/movie/subject" +
-                "/{0}?apikey={1}", sid, apikey);
-
-
-            String content = await _doubanAccessor.GetResponse(url, cancellationToken);
-            var data = _jsonSerializer.DeserializeFromString<Response.Subject>(content);
-
-            _logger.LogInformation("Get douban subject {0} successfully: {1}",
-                                   sid, data.Title);
-            return data;
-        }
-
-        private T TransMediaInfo<T>(Response.Subject data)
-            where T : BaseItem, new()
-        {
-            var media = new T
-            {
-                Name = data.Title,
-                OriginalTitle = data.Original_Title,
-                CommunityRating = data.Rating.Average,
-                Overview = data.Summary.Replace("\n", "</br>"),
-                ProductionYear = int.Parse(data.Year),
-                HomePageUrl = data.Alt,
-                ProductionLocations = data.Countries.ToArray()
-            };
-
-            if (!String.IsNullOrEmpty(data.Pubdate))
-            {
-                media.PremiereDate = DateTime.Parse(data.Pubdate);
-            }
-
-            data.Trailer_Urls.ForEach(item => media.AddTrailerUrl(item));
-            data.Genres.ForEach(media.AddGenre);
-
-            return media;
-        }
-
-        private List<PersonInfo> TransPersonInfo(
-            List<Response.PersonInfo> persons, string personType)
-        {
-            var result = new List<PersonInfo>();
-            foreach (var person in persons)
-            {
-                var personInfo = new PersonInfo
-                {
-                    Name = person.Name,
-                    Type = personType,
-                    ImageUrl = person.Avatars?.Large,
-                };
-
-                personInfo.SetProviderId(ProviderID, person.Id);
-                result.Add(personInfo);
-            }
-            return result;
+            String response = await _doubanAccessor.RequestFrodo($"{FrodoUtils.ItemApi}/{type}/{sid}", new Dictionary<string, string>(), cancellationToken);
+            Response.Subject subject = _jsonSerializer.DeserializeFromString<Response.Subject>(response);
+            subjectCache.subject = subject;
+            return subject;
         }
     }
 }

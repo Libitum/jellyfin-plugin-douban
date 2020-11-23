@@ -18,7 +18,7 @@ namespace Jellyfin.Plugin.Douban
         private static readonly Random _random = new Random();
         // It's used to store the last access time, to reduce the access frequency.
         private static long _lastAccessTime = 0;
-        
+
         // It's used to store the value of BID in cookie.
         private static string _doubanBid = "";
 
@@ -53,7 +53,7 @@ namespace Jellyfin.Plugin.Douban
             _minRequestInternalMs = minRequestInternalMs;
         }
 
-        public async Task<String> GetResponse(string url, CancellationToken cancellationToken)
+        public async Task<string> GetResponse(string url, CancellationToken cancellationToken)
         {
             var options = new HttpRequestOptions
             {
@@ -65,7 +65,7 @@ namespace Jellyfin.Plugin.Douban
 
             if (!string.IsNullOrEmpty(_doubanBid))
             {
-                options.RequestHeaders.Add("Cookie", String.Format("bid={0}", _doubanBid));
+                options.RequestHeaders.Add("Cookie", string.Format("bid={0}", _doubanBid));
             }
 
             using var response = await _httpClient.GetResponse(options).ConfigureAwait(false);
@@ -80,13 +80,13 @@ namespace Jellyfin.Plugin.Douban
             }
 
             using var reader = new StreamReader(response.Content);
-            String content = reader.ReadToEnd();
+            string content = reader.ReadToEnd();
 
             return content;
         }
 
         // Delays for some time to reduce the access frequency.
-        public async Task<String> GetResponseWithDelay(string url, CancellationToken cancellationToken)
+        public async Task<string> GetResponseWithDelay(string url, CancellationToken cancellationToken)
         {
             await _locker.WaitAsync();
             try
@@ -111,6 +111,45 @@ namespace Jellyfin.Plugin.Douban
             finally
             {
                 _locker.Release();
+            }
+        }
+
+        public async Task<string> RequestFrodo(string api, Dictionary<string, string> queryParams, CancellationToken cancellationToken)
+        {
+            string ts = FrodoUtils.GetTsParam();
+            string sig = FrodoUtils.GetSigParam(api, ts);
+
+            queryParams.Add("_ts", ts);
+            queryParams.Add("_sig", sig);
+            queryParams.Add("apikey", FrodoUtils.ApiKey);
+
+            string query = FrodoUtils.FormatQueryString(queryParams);
+            string url = $"{FrodoUtils.BaseDoubanUrl}{api}{query}";
+
+            var options = new HttpRequestOptions
+            {
+                Url = url,
+                CancellationToken = cancellationToken,
+                BufferContent = true,
+                UserAgent = FrodoUtils.UserAgent,
+            };
+
+            try
+            {
+                _logger.LogInformation($"[DOUBAN FRODO INFO] Requesting {url}");
+
+                using var response = await _httpClient.GetResponse(options).ConfigureAwait(false);
+
+                using var reader = new StreamReader(response.Content);
+                string content = reader.ReadToEnd();
+
+                _logger.LogInformation($"[DOUBAN FRODO INFO] Request successfully!");
+                return content;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"[DOUBAN FRODO ERR] Request failed, {e.Message}");
+                throw e;
             }
         }
     }

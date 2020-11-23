@@ -1,9 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
@@ -19,7 +19,7 @@ namespace Jellyfin.Plugin.Douban
         IRemoteMetadataProvider<Season, SeasonInfo>,
         IRemoteMetadataProvider<Episode, EpisodeInfo>
     {
-        public String Name => "Douban TV Provider";
+        public string Name => "Douban TV Provider";
         public int Order => 3;
 
         public TVProvider(IHttpClient httpClient,
@@ -33,34 +33,27 @@ namespace Jellyfin.Plugin.Douban
         public async Task<MetadataResult<Series>> GetMetadata(SeriesInfo info,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Douban:GetMetadata name: {info.Name}");
+            _logger.LogInformation($"[DOUBAN FRODO INFO] Getting metadata for \"{info.Name}\"");
 
             var sid = info.GetProviderId(ProviderID);
-            _logger.LogInformation($"sid: {sid}");
             if (string.IsNullOrWhiteSpace(sid))
             {
-                // Get subject id firstly
-                var sidList = await SearchSidByName(info.Name,
+                var searchResults = await SearchFrodoByName(info.Name, "movie",
                     cancellationToken).ConfigureAwait(false);
-                foreach (var s in sidList)
-                {
-                    _logger.LogDebug($"sidList: {s}");
-                }
-                sid = sidList.FirstOrDefault();
+                sid = searchResults.FirstOrDefault()?.Id;
             }
 
             if (string.IsNullOrWhiteSpace(sid))
             {
-                // Not found, just return
+                _logger.LogError($"[DOUBAN FRODO ERROR] No sid found for \"{info.Name}\"");
                 return new MetadataResult<Series>();
             }
 
-            var result = await GetMetaFromDouban<Series>(sid, "tv",
+            var result = await GetMetaFromFrodo<Series>(sid, "tv",
                 cancellationToken).ConfigureAwait(false);
             if (result.HasMetadata)
             {
-                info.SetProviderId(ProviderID, sid);
-                result.QueriedById = true;
+                _logger.LogInformation($"[DOUBAN FRODO INFO] Get the metadata of \"{info.Name}\" successfully!");
             }
 
             return result;
@@ -69,44 +62,32 @@ namespace Jellyfin.Plugin.Douban
         public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
             SeriesInfo info, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Douban: search name {0}", info.Name);
+            _logger.LogInformation($"[DOUBAN FRODO INFO] Searching \"{info.Name}\"");
 
             var results = new List<RemoteSearchResult>();
 
-            IEnumerable<string> sidList;
+            var searchResults = new List<Response.SearchTarget>();
 
-            string doubanId = info.GetProviderId(ProviderID);
-            _logger.LogInformation("douban id is {0}", doubanId);
-            if (!string.IsNullOrEmpty(doubanId))
+            string sid = info.GetProviderId(ProviderID);
+            if (!string.IsNullOrEmpty(sid))
             {
-                sidList = new List<string>
-                {
-                    doubanId
-                };
+                searchResults.Add(FrodoUtils.MapSubjectToSearchTarget(await GetFrodoSubject(sid, "tv", cancellationToken)));
             }
             else
             {
-                sidList = await SearchSidByName(info.Name, cancellationToken).
-                    ConfigureAwait(false);
+                searchResults = await SearchFrodoByName(info.Name, "tv", cancellationToken).
+                ConfigureAwait(false);
             }
 
-            foreach (String sid in sidList)
+            foreach (Response.SearchTarget searchTarget in searchResults)
             {
-                var subject = await GetDoubanSubject(sid, cancellationToken).
-                    ConfigureAwait(false);
-                if (subject.Subtype != "tv")
-                {
-                    continue;
-                }
-
                 var searchResult = new RemoteSearchResult()
                 {
-                    Name = subject.Title,
-                    ImageUrl = subject.Images.Large,
-                    Overview = subject.Summary,
-                    ProductionYear = int.Parse(subject.Year),
+                    Name = searchTarget?.Title,
+                    ImageUrl = searchTarget?.Cover_Url,
+                    ProductionYear = int.Parse(searchTarget?.Year)
                 };
-                searchResult.SetProviderId(ProviderID, sid);
+                searchResult.SetProviderId(ProviderID, searchTarget.Id);
                 results.Add(searchResult);
             }
 
@@ -118,29 +99,34 @@ namespace Jellyfin.Plugin.Douban
         public async Task<MetadataResult<Season>> GetMetadata(SeasonInfo info,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Douban:GetMetadata for {info.Name}");
+            _logger.LogInformation($"[DOUBAN FRODO INFO] Getting metadata for \"{info.Name}\"");
             var result = new MetadataResult<Season>();
 
-            info.SeriesProviderIds.TryGetValue(ProviderID, out string sid);
+            info.SeriesProviderIds.TryGetValue(ProviderID, out string seriesId);
+            var sid = info.GetProviderId(ProviderID);
             if (string.IsNullOrEmpty(sid))
             {
-                _logger.LogInformation("No douban sid found, just skip");
-                return result;
+                var searchResults = await SearchFrodoByName(info.Name, "tv",
+                   cancellationToken).ConfigureAwait(false);
+                sid = searchResults.FirstOrDefault()?.Id;
             }
 
-            if (info.IndexNumber.HasValue && info.IndexNumber.Value > 0)
+            if (string.IsNullOrWhiteSpace(sid))
             {
-                // We can not give more information from Douban right now.
-                return result;
+                _logger.LogError($"[DOUBAN FRODO ERROR] No sid found for \"{info.Name}\"");
+                return new MetadataResult<Season>();
             }
 
-            var subject = await GetDoubanSubject(sid, cancellationToken).
+            var subject = await GetFrodoSubject(sid, "tv", cancellationToken).
                 ConfigureAwait(false);
-            if (subject.Current_Season.HasValue)
+
+            string pattern_name = @".* (?i)Season(?-i) (\d+)$";
+            Match match = Regex.Match(subject.Original_Title, pattern_name);
+            if (match.Success)
             {
                 result.Item = new Season
                 {
-                    IndexNumber = subject.Current_Season.Value,
+                    IndexNumber = int.Parse(match.Groups[1].Value),
                     ProductionYear = int.Parse(subject.Year)
                 };
                 result.HasMetadata = true;
@@ -172,11 +158,12 @@ namespace Jellyfin.Plugin.Douban
                 return result;
             }
 
-            info.SeriesProviderIds.TryGetValue(ProviderID, out string sid);
+            var sid = info.GetProviderId(ProviderID);
             if (string.IsNullOrEmpty(sid))
             {
-                _logger.LogInformation("No douban sid found, just skip");
-                return result;
+                var searchResults = await SearchFrodoByName(info.Name, "tv",
+                   cancellationToken).ConfigureAwait(false);
+                sid = searchResults.FirstOrDefault()?.Id;
             }
 
             if (!info.IndexNumber.HasValue)
@@ -192,24 +179,25 @@ namespace Jellyfin.Plugin.Douban
                 IndexNumber = info.IndexNumber,
                 ParentIndexNumber = info.ParentIndexNumber
             };
+            result.Item.SetProviderId(ProviderID, sid);
 
-            var url = String.Format("https://movie.douban.com/subject/{0}" +
+            var url = string.Format("https://movie.douban.com/subject/{0}" +
                 "/episode/{1}/", sid, info.IndexNumber);
-            String content = await _doubanAccessor.GetResponseWithDelay(url, cancellationToken);
-            String pattern_name = "data-name=\\\"(.*?)\\\"";
+            string content = await _doubanAccessor.GetResponseWithDelay(url, cancellationToken);
+            string pattern_name = "data-name=\\\"(.*?)\\\"";
             Match match = Regex.Match(content, pattern_name);
             if (match.Success)
             {
-                var name = match.Groups[1].Value;
+                var name = HttpUtility.HtmlDecode(match.Groups[1].Value);
                 _logger.LogDebug("The name is {0}", name);
                 result.Item.Name = name;
             }
 
-            String pattern_desc = "data-desc=\\\"(.*?)\\\"";
+            string pattern_desc = "data-desc=\\\"(.*?)\\\"";
             match = Regex.Match(content, pattern_desc);
             if (match.Success)
             {
-                var desc = match.Groups[1].Value;
+                var desc = HttpUtility.HtmlDecode(match.Groups[1].Value);
                 _logger.LogDebug("The desc is {0}", desc);
                 result.Item.Overview = desc;
             }
