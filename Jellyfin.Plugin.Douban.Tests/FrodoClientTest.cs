@@ -14,15 +14,16 @@ namespace Jellyfin.Plugin.Douban.Tests
 
         public FrodoClientTest(ITestOutputHelper output)
         {
-            var serviceProvider = new ServiceCollection()
+            var serviceProvider = new ServiceCollection().AddHttpClient()
                 .AddLogging(builder => builder.AddXUnit(output).SetMinimumLevel(LogLevel.Trace))
                 .BuildServiceProvider();
+
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
             var logger = loggerFactory.CreateLogger<FrodoClient>();
 
-            var httpClient = new MockHttpClient();
+            var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
             var jsonSerializer = new MockJsonSerializer();
-            _client = new FrodoClient(httpClient, jsonSerializer, logger);
+            _client = new FrodoClient(httpClientFactory, jsonSerializer, logger);
         }
 
         [Fact]

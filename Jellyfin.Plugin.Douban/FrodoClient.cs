@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 
@@ -31,13 +31,13 @@ namespace Jellyfin.Plugin.Douban
             + "product/shamu vendor/OPPO model/OPPO R11 Plus"
             + "rom/android  network/wifi  platform/mobile nd/1";
 
-        private readonly IHttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<FrodoClient> _logger;
         private readonly IJsonSerializer _jsonSerializer;
-        public FrodoClient(IHttpClient httpClient, IJsonSerializer jsonSerializer,
+        public FrodoClient(IHttpClientFactory httpClientFactory, IJsonSerializer jsonSerializer,
             ILogger<FrodoClient> logger)
         {
-            this._httpClient = httpClient;
+            this._httpClientFactory = httpClientFactory;
             this._jsonSerializer = jsonSerializer;
             this._logger = logger;
         }
@@ -162,20 +162,24 @@ namespace Jellyfin.Plugin.Douban
             string url = $"{BaseDoubanUrl}{path}?{queryStr}";
             _logger.LogInformation($"Frodo request URL: {url}");
 
-            // Build the request options
-            var options = new HttpRequestOptions
-            {
-                Url = url,
-                CancellationToken = cancellationToken,
-                BufferContent = true,
-                UserAgent = UserAgent,
-            };
-
             // Send request to Frodo API and get response.
-            using var response = await _httpClient.GetResponse(options).ConfigureAwait(false);
+
+
+            var response = await GetAsync(url, cancellationToken);
+            Stream content = await response.Content.ReadAsStreamAsync();
 
             _logger.LogTrace($"Finish to request path: {path}");
-            return response.Content;
+            return content;
+        }
+
+        private async Task<HttpResponseMessage> GetAsync(string url, CancellationToken cancellationToken)
+        {
+            var httpClient = _httpClientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
+
+            var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            return response;
         }
     }
 }
