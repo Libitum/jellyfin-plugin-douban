@@ -1,8 +1,6 @@
 ﻿using System.Net.Http;
 using System.Threading;
-using Jellyfin.Plugin.Douban.Tests.Mock;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -14,16 +12,8 @@ namespace Jellyfin.Plugin.Douban.Tests
 
         public FrodoClientTest(ITestOutputHelper output)
         {
-            var serviceProvider = new ServiceCollection().AddHttpClient()
-                .AddLogging(builder => builder.AddXUnit(output).SetMinimumLevel(LogLevel.Trace))
-                .BuildServiceProvider();
-
-            var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
-            var logger = loggerFactory.CreateLogger<FrodoClient>();
-
-            var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
-            var jsonSerializer = new MockJsonSerializer();
-            _client = new FrodoClient(httpClientFactory, jsonSerializer, logger);
+            var serviceProvider = ServiceUtils.BuildServiceProvider<FrodoClient>(output);
+            _client = serviceProvider.GetService<FrodoClient>();
         }
 
         [Fact]
