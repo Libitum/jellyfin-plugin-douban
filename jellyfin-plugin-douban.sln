@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26124.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Plugin.Douban", "Jellyfin.Plugin.Douban\Jellyfin.Plugin.Douban.csproj", "{22F69FCD-9702-44FA-98B5-D7AF912C4B37}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jellyfin.Plugin.Douban", "Jellyfin.Plugin.Douban\Jellyfin.Plugin.Douban.csproj", "{22F69FCD-9702-44FA-98B5-D7AF912C4B37}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jellyfin.Plugin.Douban.Tests", "Jellyfin.Plugin.Douban.Tests\Jellyfin.Plugin.Douban.Tests.csproj", "{593E2CB8-69CC-4C50-BAB6-17CEC810F095}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jellyfin.Plugin.Douban.Tests", "Jellyfin.Plugin.Douban.Tests\Jellyfin.Plugin.Douban.Tests.csproj", "{593E2CB8-69CC-4C50-BAB6-17CEC810F095}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,17 +22,22 @@ Global
 		{593E2CB8-69CC-4C50-BAB6-17CEC810F095}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{593E2CB8-69CC-4C50-BAB6-17CEC810F095}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {66FDFA0E-E866-4930-8FEF-A4417C39D030}
+	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = PrefixedHierarchical
-		$0.TextStylePolicy = $2
+		$0.TextStylePolicy = $4
 		$2.FileWidth = 80
 		$2.TabsToSpaces = True
 		$2.scope = text/x-csharp
 		$0.CSharpFormattingPolicy = $3
 		$3.scope = text/x-csharp
-		$0.TextStylePolicy = $4
 		$4.FileWidth = 80
 		$4.TabsToSpaces = True
 		$4.scope = text/plain

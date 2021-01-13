@@ -113,44 +113,5 @@ namespace Jellyfin.Plugin.Douban
                 _locker.Release();
             }
         }
-
-        public async Task<string> RequestFrodo(string api, Dictionary<string, string> queryParams, CancellationToken cancellationToken)
-        {
-            string ts = FrodoUtils.GetTsParam();
-            string sig = FrodoUtils.GetSigParam(api, ts);
-
-            queryParams.Add("_ts", ts);
-            queryParams.Add("_sig", sig);
-            queryParams.Add("apikey", FrodoUtils.ApiKey);
-
-            string query = FrodoUtils.FormatQueryString(queryParams);
-            string url = $"{FrodoUtils.BaseDoubanUrl}{api}{query}";
-
-            var options = new HttpRequestOptions
-            {
-                Url = url,
-                CancellationToken = cancellationToken,
-                BufferContent = true,
-                UserAgent = FrodoUtils.UserAgent,
-            };
-
-            try
-            {
-                _logger.LogInformation($"[DOUBAN FRODO INFO] Requesting {url}");
-
-                using var response = await _httpClient.GetResponse(options).ConfigureAwait(false);
-
-                using var reader = new StreamReader(response.Content);
-                string content = reader.ReadToEnd();
-
-                _logger.LogInformation($"[DOUBAN FRODO INFO] Request successfully!");
-                return content;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError($"[DOUBAN FRODO ERR] Request failed, {e.Message}");
-                throw e;
-            }
-        }
     }
 }

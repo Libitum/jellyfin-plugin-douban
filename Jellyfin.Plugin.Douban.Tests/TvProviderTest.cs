@@ -1,29 +1,18 @@
-using System;
 using System.Threading;
-using Jellyfin.Plugin.Douban.Tests.Mock;
 using MediaBrowser.Controller.Providers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using MediaBrowser.Model.Entities;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Jellyfin.Plugin.Douban.Tests
 {
     public class TvProviderTest
     {
         private readonly TVProvider _doubanProvider;
-        private readonly IServiceProvider _serviceProvider;
-
-        public TvProviderTest()
+        public TvProviderTest(ITestOutputHelper output)
         {
-            _serviceProvider = new ServiceCollection().AddLogging(builder => builder.AddConsole())
-                                                      .BuildServiceProvider();
-            var loggerFactory = _serviceProvider.GetService<ILoggerFactory>();
-            var logger = loggerFactory.CreateLogger<TVProvider>();
-
-            var httpClient = new MockHttpClient();
-            var jsonSerializer = new MockJsonSerializer();
-            _doubanProvider = new TVProvider(httpClient, jsonSerializer, logger);
+            var serviceProvider = ServiceUtils.BuildServiceProvider<TVProvider>(output);
+            _doubanProvider = serviceProvider.GetService<TVProvider>();
         }
 
         [Fact]
@@ -48,7 +37,7 @@ namespace Jellyfin.Plugin.Douban.Tests
                 IndexNumber = 1,
             };
 
-            episodeInfo.SeriesProviderIds[FrodoUtils.ProviderId] = "1393859";
+            episodeInfo.SeriesProviderIds["DoubanID"] = "1393859";
             var metadataResult = _doubanProvider.GetMetadata(episodeInfo, CancellationToken.None).Result;
             Assert.True(metadataResult.HasMetadata);
 
@@ -59,7 +48,7 @@ namespace Jellyfin.Plugin.Douban.Tests
                 IndexNumber = 2,
             };
 
-            episodeInfo2.SeriesProviderIds[FrodoUtils.ProviderId] = "1393859";
+            episodeInfo2.SeriesProviderIds["DoubanID"] = "1393859";
             var metadataResult2 = _doubanProvider.GetMetadata(episodeInfo2, CancellationToken.None).Result;
             Assert.True(metadataResult2.HasMetadata);
         }
@@ -67,11 +56,11 @@ namespace Jellyfin.Plugin.Douban.Tests
         [Fact]
         public void TestGetSeasonMetadata()
         {
-            SeasonInfo seasonInfo  = new SeasonInfo()
+            SeasonInfo seasonInfo = new SeasonInfo()
             {
                 Name = "老友记 第二季"
             };
-            seasonInfo.SeriesProviderIds[FrodoUtils.ProviderId] = "1393859";
+            seasonInfo.SeriesProviderIds["DoubanID"] = "1393859";
             var metadataResult = _doubanProvider.GetMetadata(seasonInfo, CancellationToken.None).Result;
 
             Assert.True(metadataResult.HasMetadata);

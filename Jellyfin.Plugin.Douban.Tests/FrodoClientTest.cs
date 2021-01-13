@@ -8,40 +8,40 @@ namespace Jellyfin.Plugin.Douban.Tests
 {
     public class FrodoClientTest
     {
-        private readonly FrodoClient _client;
+        private readonly FrodoAndroidClient _client;
 
         public FrodoClientTest(ITestOutputHelper output)
         {
-            var serviceProvider = ServiceUtils.BuildServiceProvider<FrodoClient>(output);
-            _client = serviceProvider.GetService<FrodoClient>();
+            var serviceProvider = ServiceUtils.BuildServiceProvider<FrodoAndroidClient>(output);
+            _client = serviceProvider.GetService<FrodoAndroidClient>();
         }
 
         [Fact]
         public void TestGetMovieItem()
         {
             // Test for right case.
-            Response.Subject item = _client.GetMovieItem("1291561", CancellationToken.None).Result;
+            Response.Subject item = _client.GetSubject("1291561", MediaType.movie, CancellationToken.None).Result;
             Assert.Equal("1291561", item.Id);
             Assert.False(item.Is_Tv);
             Assert.Equal("千与千寻", item.Title);
 
             // Test if the type of subject is error.
             Assert.ThrowsAsync<HttpRequestException>(
-                () => _client.GetMovieItem("3016187", CancellationToken.None));
+                () => _client.GetSubject("3016187", MediaType.movie, CancellationToken.None));
         }
 
         [Fact]
         public void TestGetTvItem()
         {
             // Test for right case.
-            Response.Subject item = _client.GetTvItem("3016187", CancellationToken.None).Result;
+            Response.Subject item = _client.GetSubject("3016187", MediaType.tv, CancellationToken.None).Result;
             Assert.Equal("3016187", item.Id);
             Assert.True(item.Is_Tv);
             Assert.Equal("权力的游戏 第一季", item.Title);
 
             // Test if the type of subject is error.
             Assert.ThrowsAsync<HttpRequestException>(
-                () => _client.GetTvItem("1291561", CancellationToken.None));
+                () => _client.GetSubject("1291561", MediaType.tv, CancellationToken.None));
         }
 
         [Fact]

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
@@ -18,9 +18,9 @@ namespace Jellyfin.Plugin.Douban
         public string Name => "Douban Movie Provider";
         public int Order => 3;
 
-        public MovieProvider(IHttpClient httpClient,
+        public MovieProvider(IHttpClientFactory httpClientFactory,
             IJsonSerializer jsonSerializer,
-            ILogger<MovieProvider> logger) : base(httpClient, jsonSerializer, logger)
+            ILogger<MovieProvider> logger) : base(httpClientFactory, jsonSerializer, logger)
         {
             // Empty
         }
@@ -28,27 +28,25 @@ namespace Jellyfin.Plugin.Douban
         public async Task<MetadataResult<Movie>> GetMetadata(MovieInfo info,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"[DOUBAN FRODO INFO] Getting metadata for \"{info.Name}\"");
+            _logger.LogInformation($"[DOUBAN] Getting metadata for \"{info.Name}\"");
 
-            var sid = info.GetProviderId(ProviderID);
+            string sid = info.GetProviderId(ProviderID);
             if (string.IsNullOrWhiteSpace(sid))
             {
-                var searchResults = await SearchFrodoByName(info.Name, "movie",
-                    cancellationToken).ConfigureAwait(false);
+                var searchResults = await Search<Movie>(info.Name, cancellationToken);
                 sid = searchResults.FirstOrDefault()?.Id;
             }
 
             if (string.IsNullOrWhiteSpace(sid))
             {
-                _logger.LogError($"[DOUBAN FRODO ERROR] No sid found for \"{info.Name}\"");
+                _logger.LogWarning($"[DOUBAN] No sid found for \"{info.Name}\"");
                 return new MetadataResult<Movie>();
             }
 
-            var result = await GetMetaFromFrodo<Movie>(sid, "movie",
-                cancellationToken).ConfigureAwait(false);
+            var result = await GetMetadata<Movie>(sid, cancellationToken);
             if (result.HasMetadata)
             {
-                _logger.LogInformation($"[DOUBAN FRODO INFO] Get the metadata of \"{info.Name}\" successfully!");
+                _logger.LogInformation($"[DOUBAN] Get the metadata of \"{info.Name}\" successfully!");
                 info.SetProviderId(ProviderID, sid);
             }
 
@@ -58,7 +56,7 @@ namespace Jellyfin.Plugin.Douban
         public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
             MovieInfo info, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"[DOUBAN FRODO INFO] Searching \"{info.Name}\"");
+            _logger.LogInformation($"[DOUBAN] GetSearchResults \"{info.Name}\"");
 
             var results = new List<RemoteSearchResult>();
 
@@ -67,12 +65,18 @@ namespace Jellyfin.Plugin.Douban
             string sid = info.GetProviderId(ProviderID);
             if (!string.IsNullOrEmpty(sid))
             {
-                searchResults.Add(FrodoUtils.MapSubjectToSearchTarget(await GetFrodoSubject(sid, "movie", cancellationToken)));
+                var subject = await GetSubject<Movie>(sid, cancellationToken);
+                searchResults.Add(new Response.SearchTarget
+                {
+                    Id = subject?.Id,
+                    Cover_Url = subject?.Pic?.Normal,
+                    Year = subject?.Year,
+                    Title = subject?.Title
+                });
             }
             else
             {
-                searchResults = await SearchFrodoByName(info.Name, "movie", cancellationToken).
-                ConfigureAwait(false);
+                searchResults = await Search<Movie>(info.Name, cancellationToken);
             }
 
             foreach (Response.SearchTarget searchTarget in searchResults)

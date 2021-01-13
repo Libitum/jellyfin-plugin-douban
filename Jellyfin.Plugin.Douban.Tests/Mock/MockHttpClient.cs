@@ -13,8 +13,10 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
 
         public MockHttpClient()
         {
-            _httpClient = new HttpClient();
-            _httpClient.Timeout = TimeSpan.FromSeconds(30);
+            _httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(30)
+            };
         }
 
         public async Task<HttpResponseInfo> GetResponse(HttpRequestOptions options)
@@ -25,7 +27,7 @@ namespace Jellyfin.Plugin.Douban.Tests.Mock
             {
                 _httpClient.DefaultRequestHeaders.Add("Cookie",
                                                       options.RequestHeaders.Get("Cookie"));
-            }    
+            }
 
             HttpResponseMessage response = await _httpClient.GetAsync(options.Url,
                                                                       options.CancellationToken);

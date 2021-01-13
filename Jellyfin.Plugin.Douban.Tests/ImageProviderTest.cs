@@ -1,38 +1,44 @@
 using System;
 using System.Threading;
-using Jellyfin.Plugin.Douban.Tests.Mock;
+using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Jellyfin.Plugin.Douban.Tests
 {
     public class ImageProviderTest
     {
-        private readonly ImageProvider _imageProvider;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly ImageProvider _provider;
 
-        public ImageProviderTest()
+        public ImageProviderTest(ITestOutputHelper output)
         {
-            _serviceProvider = new ServiceCollection().AddLogging(builder => builder.AddConsole())
-                                                      .BuildServiceProvider();
-            var loggerFactory = _serviceProvider.GetService<ILoggerFactory>();
-            var logger = loggerFactory.CreateLogger<ImageProvider>();
+            var serviceProvider = ServiceUtils.BuildServiceProvider<ImageProvider>(output);
+            _provider = serviceProvider.GetService<ImageProvider>();
+        }
 
-            var httpClient = new MockHttpClient();
-            var jsonSerializer = new MockJsonSerializer();
-            _imageProvider = new ImageProvider(httpClient, jsonSerializer, logger);
+
+        [Fact]
+        public void TestGetPrimary()
+        {
+            var list = _provider.GetPrimary("5350027", "movie", CancellationToken.None).Result;
+            Assert.Single(list);
+            foreach (var item in list)
+            {
+                Assert.Equal(ImageType.Primary, item.Type);
+                Assert.EndsWith("p2530249558.webp", item.Url);
+            }
         }
 
         [Fact]
         public void TestGetBackdrop()
         {
             // Test 1:
-            var list = _imageProvider.GetBackdrop("5350027", CancellationToken.None).Result;
+            var list = _provider.GetBackdrop("5350027", CancellationToken.None).Result;
             foreach (var item in list)
             {
                 Console.WriteLine(item.Url);
-                Console.WriteLine(item.Type);
+                Assert.Equal(ImageType.Backdrop, item.Type);
             }
             Assert.Single(list);
         }

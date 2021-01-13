@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Jellyfin.Plugin.Douban.Response;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
@@ -16,139 +19,157 @@ namespace Jellyfin.Plugin.Douban
 {
     public abstract class BaseProvider
     {
-        internal const string ProviderID = "DoubanID";
+        /// <summary>
+        /// Used to store douban Id in Jellyfin system. 
+        /// </summary>
+        public const string ProviderID = "DoubanID";
 
-        protected IHttpClient _httpClient;
-        protected IJsonSerializer _jsonSerializer;
-        protected ILogger _logger;
+        protected readonly ILogger _logger;
 
-        protected Configuration.PluginConfiguration _config;
-        protected DoubanAccessor _doubanAccessor;
+        protected readonly Configuration.PluginConfiguration _config;
 
-        protected BaseProvider(IHttpClient httpClient,
+        // All requests 
+        protected readonly IDoubanClient _doubanClient;
+
+        protected BaseProvider(IHttpClientFactory httpClientFactory,
             IJsonSerializer jsonSerializer, ILogger logger)
         {
-            this._httpClient = httpClient;
-            this._jsonSerializer = jsonSerializer;
             this._logger = logger;
             this._config = Plugin.Instance == null ?
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
 
-            this._doubanAccessor = new DoubanAccessor(_httpClient, _logger,
-                                                      _config.MinRequestInternalMs);
+            this._doubanClient = new FrodoAndroidClient(httpClientFactory, jsonSerializer, logger);
         }
 
+        // TODO(Libitum): Use HttpResponseMessage instead when upgrading the new version of Jellyfin.
         public Task<HttpResponseInfo> GetImageResponse(string url,
            CancellationToken cancellationToken)
         {
-            _logger.LogInformation("[DOUBAN INFO] GetImageResponse url: {0}", url);
-            return _httpClient.GetResponse(new HttpRequestOptions
-            {
-                Url = url,
-                CancellationToken = cancellationToken
-            });
+            _logger.LogInformation("[DOUBAN] GetImageResponse url: {0}", url);
+            return _doubanClient.GetResponse(url, cancellationToken);
         }
 
-        public async Task<List<Response.SearchTarget>> SearchFrodoByName(string name, string type,
+        public async Task<List<Response.SearchTarget>> Search<T>(string name,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"[DOUBAN FRODO INFO] Searching for sid of {type} named \"{name}\"");
+            MediaType type = typeof(T) == typeof(Movie) ? MediaType.movie : MediaType.tv;
+
+            _logger.LogInformation($"[DOUBAN] Searching for sid of {type} named \"{name}\"");
 
             var searchResults = new List<Response.SearchTarget>();
 
             if (string.IsNullOrWhiteSpace(name))
             {
-                _logger.LogWarning($"[DOUBAN FRODO WARN] Search name is empty.");
+                _logger.LogWarning($"[DOUBAN] Search name is empty.");
                 return searchResults;
             }
 
-            name = string.Join(" ", name.Split("."));
-
-            SearchCache searchCache = SearchCache.Instance;
-            string searchId = $"{name}-{type}";
-            if (searchCache.Has(searchId))
-            {
-                _logger.LogInformation($"[DOUBAN FRODO INFO] Found search cache.");
-                return searchCache.searchResult;
-            }
-
-            Dictionary<string, string> queryParams = new Dictionary<string, string>();
-            queryParams.Add("q", name);
-            queryParams.Add("count", $"{FrodoUtils.MaxSearchCount}");
+            name = name.Replace('.', ' ');
 
             try
             {
-                var response = await _doubanAccessor.RequestFrodo(FrodoUtils.SearchApi, queryParams,
-                    cancellationToken);
-                Response.SearchResult result = _jsonSerializer.DeserializeFromString<Response.SearchResult>(response);
-                if (result.Total > 0)
+                var response = await _doubanClient.Search(name, cancellationToken);
+                if (response.Items.Count > 0)
                 {
-                    foreach (Response.SearchSubject subject in result.Items)
-                    {
-                        if (subject.Target_Type == type)
-                        {
-                            searchResults.Add(subject.Target);
-                        }
-                    }
+                    searchResults = response.Items.Where(item => item.Target_Type == type.ToString())
+                        .Select(item => item.Target).ToList();
+
                     if (searchResults.Count == 0)
                     {
-                        _logger.LogWarning($"[DOUBAN FRODO WARN] Seems like \"{name}\" genre is not {type}.");
+                        _logger.LogWarning($"[DOUBAN] Seems like \"{name}\" genre is not {type}.");
                     }
                 }
                 else
                 {
-                    _logger.LogError($"[DOUBAN FRODO ERR] No results found for \"{name}\".");
+                    _logger.LogWarning($"[DOUBAN] No results found for \"{name}\".");
                 }
             }
             catch (HttpException e)
             {
-                _logger.LogError($"[DOUBAN FRODO ERR] Search \"{name}\" error, got {e.StatusCode}.");
+                _logger.LogError($"[DOUBAN] Search \"{name}\" error, got {e.StatusCode}.");
                 throw e;
             }
-
-            searchCache.SetSearchCache(searchId, searchResults);
 
             return searchResults;
         }
 
-        protected async Task<MetadataResult<T>> GetMetaFromFrodo<T>(string sid,
-            string type, CancellationToken cancellationToken)
+        protected async Task<Response.Subject> GetSubject<T>(string sid,
+            CancellationToken cancellationToken) where T : BaseItem
+        {
+            MediaType type = typeof(T) == typeof(Movie) ? MediaType.movie : MediaType.tv;
+            return await _doubanClient.GetSubject(sid, type, cancellationToken);
+        }
+
+        protected async Task<MetadataResult<T>> GetMetadata<T>(string sid, CancellationToken cancellationToken)
         where T : BaseItem, new()
         {
             var result = new MetadataResult<T>();
 
-            var subject = await GetFrodoSubject(sid, type, cancellationToken);
+            MediaType type = typeof(T) == typeof(Movie) ? MediaType.movie : MediaType.tv;
+            var subject = await _doubanClient.GetSubject(sid, type, cancellationToken);
 
-            result.Item = FrodoUtils.MapSubjectToItem<T>(subject);
+            result.Item = TransMediaInfo<T>(subject);
             result.Item.SetProviderId(ProviderID, sid);
-            FrodoUtils.MapCrewToPersons(subject.Directors, PersonType.Director).ForEach(result.AddPerson);
-            FrodoUtils.MapCrewToPersons(subject.Actors, PersonType.Actor).ForEach(result.AddPerson);
+            TransPersonInfo(subject.Directors, PersonType.Director).ForEach(result.AddPerson);
+            TransPersonInfo(subject.Actors, PersonType.Actor).ForEach(result.AddPerson);
 
             result.QueriedById = true;
             result.HasMetadata = true;
 
-
             return result;
         }
 
-        internal async Task<Response.Subject> GetFrodoSubject(string sid, string type,
-            CancellationToken cancellationToken)
+        private T TransMediaInfo<T>(Subject data) where T : BaseItem, new()
         {
-            _logger.LogInformation($"[DOUBAN FRODO INFO] Getting the douban subject with sid \"{sid}\"");
-
-            SubjectCache subjectCache = SubjectCache.Instance;
-
-            if (subjectCache.Has(sid))
+            var item = new T
             {
-                _logger.LogInformation($"[DOUBAN FRODO INFO] Found cache.");
-                return subjectCache.subject;
+                Name = data.Title ?? data.Original_Title,
+                OriginalTitle = data.Original_Title,
+                CommunityRating = data.Rating?.Value,
+                Overview = data.Intro,
+                ProductionYear = int.Parse(data.Year),
+                HomePageUrl = data.Url,
+                ProductionLocations = data.Countries?.ToArray()
+            };
+
+            if (data.Pubdate?.Count > 0 && !String.IsNullOrEmpty(data.Pubdate[0]))
+            {
+                string pubdate = data.Pubdate[0].Split('(', 2)[0];
+                if (DateTime.TryParse(pubdate, out DateTime dateValue))
+                {
+                    item.PremiereDate = dateValue;
+                }
             }
 
-            String response = await _doubanAccessor.RequestFrodo($"{FrodoUtils.ItemApi}/{type}/{sid}", new Dictionary<string, string>(), cancellationToken);
-            Response.Subject subject = _jsonSerializer.DeserializeFromString<Response.Subject>(response);
-            subjectCache.subject = subject;
-            return subject;
+            if (data.Trailer != null)
+            {
+                item.AddTrailerUrl(data.Trailer.Video_Url);
+            }
+
+            data.Genres.ForEach(item.AddGenre);
+
+            return item;
+        }
+
+        private List<PersonInfo> TransPersonInfo(
+            List<Crew> crewList, string personType)
+        {
+            var result = new List<PersonInfo>();
+            foreach (var crew in crewList)
+            {
+                var personInfo = new PersonInfo
+                {
+                    Name = crew.Name,
+                    Type = personType,
+                    ImageUrl = crew.Avatar?.Large ?? "",
+                    Role = crew.Roles.Count > 0 ? crew.Roles[0] : ""
+                };
+
+                personInfo.SetProviderId(ProviderID, crew.Id);
+                result.Add(personInfo);
+            }
+            return result;
         }
     }
 }
