@@ -32,6 +32,8 @@ namespace Jellyfin.Plugin.Douban
             + "product/shamu vendor/OPPO model/OPPO R11 Plus"
             + "rom/android  network/wifi  platform/mobile nd/1";
 
+        private static readonly SemaphoreSlim _locker = new SemaphoreSlim(1, 1);
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger _logger;
@@ -77,19 +79,31 @@ namespace Jellyfin.Plugin.Douban
 
         public async Task<Response.SearchResult> Search(string name, int count, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Start to Search by name: {name}, count: {count}");
-
-            const string path = "/api/v2/search/movie";
-            Dictionary<string, string> queryParams = new Dictionary<string, string>
+            await _locker.WaitAsync();
+            try
             {
-                { "q", name },
-                { "count", count.ToString() }
-            };
-            var contentStream = await GetResponse(path, queryParams, cancellationToken);
-            Response.SearchResult result = await _jsonSerializer.DeserializeFromStreamAsync<Response.SearchResult>(contentStream);
+                _logger.LogInformation($"Start to Search by name: {name}, count: {count}");
 
-            _logger.LogTrace($"Finish doing Search by name: {name}, count: {count}");
-            return result;
+                const string path = "/api/v2/search/movie";
+                Dictionary<string, string> queryParams = new Dictionary<string, string>
+                {
+                    { "q", name },
+                    { "count", count.ToString() }
+                };
+                var contentStream = await GetResponse(path, queryParams, cancellationToken);
+                Response.SearchResult result = await _jsonSerializer.DeserializeFromStreamAsync<Response.SearchResult>(contentStream);
+
+                _logger.LogTrace($"Finish doing Search by name: {name}, count: {count}");
+                
+                await Task.Delay(10000);
+
+                return result;
+            }
+            finally
+            {
+                _locker.Release();
+            }
+            
         }
 
         /// <summary>
@@ -157,14 +171,16 @@ namespace Jellyfin.Plugin.Douban
         /// <returns>Simple Http Response.</returns>
         public async Task<HttpResponseMessage> GetAsync(string url, CancellationToken cancellationToken)
         {
+            
             cancellationToken.ThrowIfCancellationRequested();
 
+            await Task.Delay(6000);
             var httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
 
             HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            return response;
+            return response; 
         }
 
         // TODO(Libitum): Delete this after upgrade new version of Jellyfin.
