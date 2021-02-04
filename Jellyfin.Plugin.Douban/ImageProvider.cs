@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -22,9 +23,9 @@ namespace Jellyfin.Plugin.Douban
         public string Name => "Douban Image Provider";
         public int Order => 3;
 
-        public ImageProvider(IHttpClientFactory httpClientFactory,
+        public ImageProvider(IHttpClient httpClient,
                              IJsonSerializer jsonSerializer,
-                             ILogger<ImageProvider> logger) : base(httpClientFactory, jsonSerializer, logger)
+                             ILogger<ImageProvider> logger) : base(httpClient, jsonSerializer, logger)
         {
             // empty
         }
@@ -86,9 +87,13 @@ namespace Jellyfin.Plugin.Douban
             var url = string.Format("https://movie.douban.com/subject/{0}/photos?" +
                                     "type=W&start=0&sortby=size&size=a&subtype=a", sid);
 
-            var response = await _doubanClient.GetAsync(url, cancellationToken);
-            var stream = await response.Content.ReadAsStreamAsync();
-            string content = new StreamReader(stream).ReadToEnd();
+            // var response = await _doubanClient.GetAsync(url, cancellationToken);
+            // var stream = await response.Content.ReadAsStreamAsync();
+            // string content = new StreamReader(stream).ReadToEnd();
+
+            var response = await _doubanClient.GetResponse(url, cancellationToken);
+            string content = new StreamReader(response.Content).ReadToEnd();
+
 
             const String pattern = @"(?s)data-id=""(\d+)"".*?class=""prop"">\n\s*(\d+)x(\d+)";
             Match match = Regex.Match(content, pattern);

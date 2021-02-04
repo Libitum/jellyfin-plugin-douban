@@ -36,14 +36,14 @@ namespace Jellyfin.Plugin.Douban
 
         private readonly Random _random = new Random();
 
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHttpClient _httpClient;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger _logger;
 
-        public FrodoAndroidClient(IHttpClientFactory httpClientFactory, IJsonSerializer jsonSerializer,
+        public FrodoAndroidClient(IHttpClient httpClient, IJsonSerializer jsonSerializer,
             ILogger logger)
         {
-            this._httpClientFactory = httpClientFactory;
+            this._httpClient = httpClient;
             this._jsonSerializer = jsonSerializer;
             this._logger = logger;
         }
@@ -157,8 +157,11 @@ namespace Jellyfin.Plugin.Douban
             _logger.LogInformation($"Frodo request URL: {url}");
 
             // Send request to Frodo API and get response.
-            using HttpResponseMessage response = await GetAsync(url, cancellationToken);
-            using Stream content = await response.Content.ReadAsStreamAsync();
+            // using HttpResponseMessage response = await GetAsync(url, cancellationToken);
+            // using Stream content = await response.Content.ReadAsStreamAsync();
+
+            using var response = await GetResponse(url, cancellationToken);
+            var content = response.Content;
 
             _logger.LogTrace($"Finish doing request path: {path}");
             return content;
@@ -176,13 +179,14 @@ namespace Jellyfin.Plugin.Douban
             
             cancellationToken.ThrowIfCancellationRequested();
 
-            await Task.Delay(6000);
-            var httpClient = _httpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
+            // var httpClient = _httpClientFactory.CreateClient();
+            // httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
 
-            HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            return response; 
+            // HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            //response.EnsureSuccessStatusCode();
+
+            // return response;
+            return null;
         }
 
         // TODO(Libitum): Delete this after upgrade new version of Jellyfin.
@@ -190,6 +194,8 @@ namespace Jellyfin.Plugin.Douban
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            /*
+             * use this in new version of Jellyfin.
             var httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
 
@@ -199,6 +205,24 @@ namespace Jellyfin.Plugin.Douban
             {
                 Content = await response.Content.ReadAsStreamAsync()
             };
+            */
+            return await GetResponseV1(url, UserAgent, cancellationToken);
         }
+
+        // TODO(Libitum): Delete this after upgrade new version of Jellyfin.
+        public async Task<HttpResponseInfo> GetResponseV1(string url, string userAgent, CancellationToken token)
+        {
+            var options = new HttpRequestOptions
+            {
+                Url = url,
+                CancellationToken = token,
+                BufferContent = true,
+                UserAgent = userAgent,
+            };
+
+            var response = await _httpClient.GetResponse(options).ConfigureAwait(false);
+            return response;
+        }
+
     }
 }
