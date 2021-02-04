@@ -34,6 +34,8 @@ namespace Jellyfin.Plugin.Douban
 
         private static readonly SemaphoreSlim _locker = new SemaphoreSlim(1, 1);
 
+        private readonly Random _random = new Random();
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger _logger;
@@ -95,7 +97,7 @@ namespace Jellyfin.Plugin.Douban
 
                 _logger.LogTrace($"Finish doing Search by name: {name}, count: {count}");
                 
-                await Task.Delay(10000);
+                await Task.Delay(_random.Next(4000, 10000));
 
                 return result;
             }
