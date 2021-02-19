@@ -22,7 +22,7 @@ namespace Jellyfin.Plugin.Douban
         /// <summary>
         /// Used to store douban Id in Jellyfin system. 
         /// </summary>
-        public const string ProviderID = "Douban";
+        public const string ProviderID = "DoubanID";
 
         protected readonly ILogger _logger;
 
@@ -31,7 +31,7 @@ namespace Jellyfin.Plugin.Douban
         // All requests 
         protected readonly IDoubanClient _doubanClient;
 
-        protected BaseProvider(IHttpClient httpClient,
+        protected BaseProvider(IHttpClientFactory httpClientFactory,
             IJsonSerializer jsonSerializer, ILogger logger)
         {
             this._logger = logger;
@@ -39,7 +39,7 @@ namespace Jellyfin.Plugin.Douban
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
 
-            this._doubanClient = new FrodoAndroidClient(httpClient, jsonSerializer, logger);
+            this._doubanClient = new FrodoAndroidClient(httpClientFactory, jsonSerializer, logger);
         }
 
         // TODO(Libitum): Use HttpResponseMessage instead when upgrading the new version of Jellyfin.

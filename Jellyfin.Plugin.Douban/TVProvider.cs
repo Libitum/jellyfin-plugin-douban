@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
@@ -23,9 +22,9 @@ namespace Jellyfin.Plugin.Douban
         public string Name => "Douban TV Provider";
         public int Order => 3;
 
-        public TVProvider(IHttpClient httpClient,
+        public TVProvider(IHttpClientFactory httpClientFactory,
                           IJsonSerializer jsonSerializer,
-                          ILogger<TVProvider> logger) : base(httpClient, jsonSerializer, logger)
+                          ILogger<TVProvider> logger) : base(httpClientFactory, jsonSerializer, logger)
         {
             // empty
         }

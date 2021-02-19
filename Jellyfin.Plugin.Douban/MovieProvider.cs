@@ -3,7 +3,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
@@ -19,9 +18,9 @@ namespace Jellyfin.Plugin.Douban
         public string Name => "Douban Movie Provider";
         public int Order => 3;
 
-        public MovieProvider(IHttpClient httpClient,
+        public MovieProvider(IHttpClientFactory httpClientFactory,
             IJsonSerializer jsonSerializer,
-            ILogger<MovieProvider> logger) : base(httpClient, jsonSerializer, logger)
+            ILogger<MovieProvider> logger) : base(httpClientFactory, jsonSerializer, logger)
         {
             // Empty
         }
