@@ -12,7 +12,7 @@ namespace Jellyfin.Plugin.Douban.Tests
         {
             var services = new ServiceCollection()
                 .AddHttpClient()
-                .AddLogging(builder => builder.AddXUnit(output).SetMinimumLevel(LogLevel.Trace))
+                .AddLogging(builder => builder.AddXUnit(output).SetMinimumLevel(LogLevel.Debug))
                 .AddSingleton<IJsonSerializer, MockJsonSerializer>()
                 .AddSingleton<T>();
 

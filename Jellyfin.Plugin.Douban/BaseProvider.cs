@@ -40,7 +40,6 @@ namespace Jellyfin.Plugin.Douban
             this._doubanClient = new FrodoAndroidClient(httpClientFactory, jsonSerializer, logger);
         }
 
-        // TODO(Libitum): Use HttpResponseMessage instead when upgrading the new version of Jellyfin.
         public Task<HttpResponseMessage> GetImageResponse(string url,
            CancellationToken cancellationToken)
         {
