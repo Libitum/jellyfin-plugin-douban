@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 
@@ -109,7 +108,7 @@ namespace Jellyfin.Plugin.Douban
 
             // Send request to Frodo API and get response.
             using HttpResponseMessage response = await GetAsync(url, cancellationToken);
-            using Stream content = await response.Content.ReadAsStreamAsync();
+            using Stream content = await response.Content.ReadAsStreamAsync(cancellationToken);
 
             _logger.LogTrace($"Finish doing request path: {path}");
             return content;
@@ -132,22 +131,6 @@ namespace Jellyfin.Plugin.Douban
             HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             return response;
-        }
-
-        // TODO(Libitum): Delete this after upgrade new version of Jellyfin.
-        public async Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var httpClient = _httpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
-
-            HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            return new HttpResponseInfo()
-            {
-                Content = await response.Content.ReadAsStreamAsync()
-            };
         }
     }
 }

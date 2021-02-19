@@ -1,7 +1,6 @@
 ﻿using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Common.Net;
 
 namespace Jellyfin.Plugin.Douban
 {
@@ -38,7 +37,5 @@ namespace Jellyfin.Plugin.Douban
         /// <returns>Simple Http Response.</returns>
         public Task<HttpResponseMessage> GetAsync(string url, CancellationToken cancellationToken);
 
-        // TODO(Libitum): Delete this after upgrade new version of Jellyfin.
-        public Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken);
     }
 }

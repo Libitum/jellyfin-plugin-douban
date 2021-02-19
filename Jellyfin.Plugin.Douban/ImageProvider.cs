@@ -87,7 +87,7 @@ namespace Jellyfin.Plugin.Douban
                                     "type=W&start=0&sortby=size&size=a&subtype=a", sid);
 
             var response = await _doubanClient.GetAsync(url, cancellationToken);
-            var stream = await response.Content.ReadAsStreamAsync();
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             string content = new StreamReader(stream).ReadToEnd();
 
             const String pattern = @"(?s)data-id=""(\d+)"".*?class=""prop"">\n\s*(\d+)x(\d+)";

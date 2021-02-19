@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 
@@ -81,7 +80,7 @@ namespace Jellyfin.Plugin.Douban
 
         public async Task<Response.SearchResult> Search(string name, int count, CancellationToken cancellationToken)
         {
-            await _locker.WaitAsync();
+            await _locker.WaitAsync(cancellationToken);
             try
             {
                 _logger.LogInformation($"Start to Search by name: {name}, count: {count}");
@@ -97,7 +96,7 @@ namespace Jellyfin.Plugin.Douban
 
                 _logger.LogTrace($"Finish doing Search by name: {name}, count: {count}");
                 
-                await Task.Delay(_random.Next(4000, 10000));
+                await Task.Delay(_random.Next(4000, 10000), cancellationToken);
 
                 return result;
             }
@@ -114,7 +113,7 @@ namespace Jellyfin.Plugin.Douban
         /// <param name="path">Douban api path, e.g. /api/v2/search/movie</param>
         /// <param name="ts">Timestamp.</param>
         /// <returns>Douban signature</returns>
-        private string Sign(string path, string ts)
+        private static string Sign(string path, string ts)
         {
             string[] message =
             {
@@ -158,7 +157,7 @@ namespace Jellyfin.Plugin.Douban
 
             // Send request to Frodo API and get response.
             using HttpResponseMessage response = await GetAsync(url, cancellationToken);
-            using Stream content = await response.Content.ReadAsStreamAsync();
+            using Stream content = await response.Content.ReadAsStreamAsync(cancellationToken);
 
             _logger.LogTrace($"Finish doing request path: {path}");
             return content;
@@ -176,29 +175,13 @@ namespace Jellyfin.Plugin.Douban
             
             cancellationToken.ThrowIfCancellationRequested();
 
-            await Task.Delay(6000);
+            await Task.Delay(6000, cancellationToken);
             var httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
 
             HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             return response; 
-        }
-
-        // TODO(Libitum): Delete this after upgrade new version of Jellyfin.
-        public async Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var httpClient = _httpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
-
-            HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            return new HttpResponseInfo()
-            {
-                Content = await response.Content.ReadAsStreamAsync()
-            };
         }
     }
 }

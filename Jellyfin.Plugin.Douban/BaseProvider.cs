@@ -5,12 +5,10 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Douban.Response;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Serialization;
 
 using Microsoft.Extensions.Logging;
@@ -43,11 +41,11 @@ namespace Jellyfin.Plugin.Douban
         }
 
         // TODO(Libitum): Use HttpResponseMessage instead when upgrading the new version of Jellyfin.
-        public Task<HttpResponseInfo> GetImageResponse(string url,
+        public Task<HttpResponseMessage> GetImageResponse(string url,
            CancellationToken cancellationToken)
         {
             _logger.LogInformation("[DOUBAN] GetImageResponse url: {0}", url);
-            return _doubanClient.GetResponse(url, cancellationToken);
+            return _doubanClient.GetAsync(url, cancellationToken);
         }
 
         public async Task<List<Response.SearchTarget>> Search<T>(string name,
@@ -85,10 +83,10 @@ namespace Jellyfin.Plugin.Douban
                     _logger.LogWarning($"[DOUBAN] No results found for \"{name}\".");
                 }
             }
-            catch (HttpException e)
+            catch (HttpRequestException e)
             {
                 _logger.LogError($"[DOUBAN] Search \"{name}\" error, got {e.StatusCode}.");
-                throw e;
+                throw;
             }
 
             return searchResults;
@@ -120,7 +118,7 @@ namespace Jellyfin.Plugin.Douban
             return result;
         }
 
-        private T TransMediaInfo<T>(Subject data) where T : BaseItem, new()
+        private static T TransMediaInfo<T>(Subject data) where T : BaseItem, new()
         {
             var item = new T
             {
@@ -152,7 +150,7 @@ namespace Jellyfin.Plugin.Douban
             return item;
         }
 
-        private List<PersonInfo> TransPersonInfo(
+        private static List<PersonInfo> TransPersonInfo(
             List<Crew> crewList, string personType)
         {
             var result = new List<PersonInfo>();
