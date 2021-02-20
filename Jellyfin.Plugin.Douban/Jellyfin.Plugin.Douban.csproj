@@ -3,9 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Jellyfin.Plugin.Douban</RootNamespace>
-    <Version>1.1.0.1</Version>
-    <AssemblyVersion>1.1.0.1</AssemblyVersion>
-    <FileVersion>1.1.0.1</FileVersion>
+	<VersionSuffix>2.0.0</VersionSuffix>
   </PropertyGroup>
 
   <ItemGroup>
