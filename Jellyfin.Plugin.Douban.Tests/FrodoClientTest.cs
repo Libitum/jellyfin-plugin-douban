@@ -28,6 +28,10 @@ namespace Jellyfin.Plugin.Douban.Tests
             // Test if the type of subject is error.
             Assert.ThrowsAsync<HttpRequestException>(
                 () => _client.GetSubject("3016187", MediaType.movie, CancellationToken.None));
+
+            // For cache
+            item = _client.GetSubject("1291561", MediaType.movie, CancellationToken.None).Result;
+            Assert.Equal("千与千寻", item.Title);
         }
 
         [Fact]

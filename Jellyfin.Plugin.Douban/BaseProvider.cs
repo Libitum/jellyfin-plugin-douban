@@ -88,6 +88,7 @@ namespace Jellyfin.Plugin.Douban
                 throw;
             }
 
+            _logger.LogInformation($"[DOUBAN] Finish searching {name}, count: {searchResults.Count}");
             return searchResults;
         }
 

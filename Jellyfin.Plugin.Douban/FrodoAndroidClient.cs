@@ -40,6 +40,8 @@ namespace Jellyfin.Plugin.Douban
 
         private static readonly SemaphoreSlim _locker = new SemaphoreSlim(1, 1);
 
+        private static readonly LRUCache _cache = new LRUCache();
+
         private readonly Random _random = new Random();
 
         private readonly IHttpClientFactory _httpClientFactory;
@@ -71,9 +73,18 @@ namespace Jellyfin.Plugin.Douban
             _logger.LogInformation($"Start to GetSubject by Id: {doubanID}");
 
             string path = $"/api/v2/{type:G}/{doubanID}";
+            // Try to use cache firstly.
+            if (_cache.TryGet<Response.Subject>(path, out Response.Subject subject))
+            {
+                _logger.LogInformation($"Get subject {doubanID} from cache");
+                return subject;
+            }
+
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             var contentStream = await GetResponse(path, queryParams, cancellationToken);
-            Response.Subject subject = await _jsonSerializer.DeserializeFromStreamAsync<Response.Subject>(contentStream);
+            subject = await _jsonSerializer.DeserializeFromStreamAsync<Response.Subject>(contentStream);
+            // Add it into cache
+            _cache.Add(path, subject);
 
             _logger.LogTrace($"Finish doing GetSubject by Id: {doubanID}");
             return subject;
