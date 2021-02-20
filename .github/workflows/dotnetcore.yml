@@ -8,9 +8,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
@@ -23,8 +21,3 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 #    - name: Test
 #      run: dotnet test --no-restore --verbosity normal
-    - name: Bump version
-      uses: SiqiLu/dotnet-bump-version@master
-      with:
-        version_file: Jellyfin.Plugin.Douban/Jellyfin.Plugin.Douban.csproj
-        github_token: ${{ secrets.GITHUB_TOKEN }}
