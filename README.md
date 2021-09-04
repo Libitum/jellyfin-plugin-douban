@@ -18,7 +18,8 @@ In Jellyfin v10.6.0 or newer version, you can install this plugin by adding repo
 
 Repository URL: https://raw.githubusercontent.com/Libitum/jellyfin-plugin-douban/master/manifest.json
 
-CN-mirror URL: https://raw.githubusercontent.com/Libitum/jellyfin-plugin-douban/master/manifest-cn.json
+CN-mirror URL1: https://github.com.cnpmjs.org/Libitum/jellyfin-plugin-douban/blob/master/manifest-cn1.json
+CN-mirror URL2: https://hub.fastgit.org/Libitum/jellyfin-plugin-douban/blob/master/manifest-cn2.json
 
 For version older than v10.6.0, please try the way below:
 
@@ -79,7 +80,8 @@ has no posters without this setting.
 
 插件仓库地址：https://raw.githubusercontent.com/Libitum/jellyfin-plugin-douban/master/manifest.json
 
-国内加速：https://raw.githubusercontent.com/Libitum/jellyfin-plugin-douban/master/manifest-cn.json
+国内加速1：https://github.com.cnpmjs.org/Libitum/jellyfin-plugin-douban/blob/master/manifest-cn1.json
+国内加速2: https://hub.fastgit.org/Libitum/jellyfin-plugin-douban/blob/master/manifest-cn2.json
 
 
 对于 v10.5.x 及之前的版本，请参考以下方式进行安装：
