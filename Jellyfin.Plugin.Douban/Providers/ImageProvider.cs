@@ -24,7 +24,7 @@ namespace Jellyfin.Plugin.Douban.Providers
         public int Order => 3;
 
         public ImageProvider(IHttpClientFactory httpClientFactory,
-                             ILogger<ImageProvider> logger) : base(httpClientFactory, logger)
+                             ILoggerFactory loggerFactory) : base(httpClientFactory, loggerFactory)
         {
             // empty
         }

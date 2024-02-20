@@ -30,14 +30,14 @@ namespace Jellyfin.Plugin.Douban.Providers
         // All requests 
         protected readonly IDoubanClient _doubanClient;
 
-        protected BaseProvider(IHttpClientFactory httpClientFactory, ILogger logger)
+        protected BaseProvider(IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
         {
-            this._logger = logger;
+            this._logger = loggerFactory.CreateLogger("Plugin.Douban");
             this._config = Plugin.Instance == null ?
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
 
-            this._doubanClient = new WechatClient(httpClientFactory, logger);
+            this._doubanClient = new WechatClient(httpClientFactory, _logger);
         }
 
         public Task<HttpResponseMessage> GetImageResponse(string url,
