@@ -1,11 +1,13 @@
 ﻿using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
+
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using Xunit.Abstractions;
 
 using Jellyfin.Plugin.Douban.Clients;
-using System.Threading.Tasks;
+
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Jellyfin.Plugin.Douban.Tests
 {

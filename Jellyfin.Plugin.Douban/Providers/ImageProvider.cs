@@ -5,16 +5,17 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Microsoft.Extensions.Logging;
+
+using Jellyfin.Plugin.Douban.Clients;
+
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
-
-using Microsoft.Extensions.Logging;
-
-using Jellyfin.Plugin.Douban.Clients;
 
 namespace Jellyfin.Plugin.Douban.Providers
 {

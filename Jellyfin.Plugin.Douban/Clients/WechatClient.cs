@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Douban.Clients

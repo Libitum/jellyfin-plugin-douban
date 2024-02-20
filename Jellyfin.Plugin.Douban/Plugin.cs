@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+
 using Jellyfin.Plugin.Douban.Configuration;
+
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;

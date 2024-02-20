@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using MediaBrowser.Model.Serialization;
+
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Douban.Clients
@@ -110,7 +110,7 @@ namespace Jellyfin.Plugin.Douban.Clients
             try
             {
                 _logger.LogInformation($"Start to Search by name: {name}, count: {count}");
-                
+
                 await Task.Delay(_random.Next(4000, 10000), cancellationToken);
 
                 const string path = "/api/v2/search/movie";
@@ -197,7 +197,7 @@ namespace Jellyfin.Plugin.Douban.Clients
         /// <returns>Simple Http Response.</returns>
         public async Task<HttpResponseMessage> GetAsync(string url, CancellationToken cancellationToken)
         {
-            
+
             cancellationToken.ThrowIfCancellationRequested();
 
             // await Task.Delay(6000, cancellationToken);
@@ -208,7 +208,7 @@ namespace Jellyfin.Plugin.Douban.Clients
 
             HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            return response; 
+            return response;
         }
 
         private void ResetCounter()

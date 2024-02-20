@@ -5,12 +5,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+
+using Microsoft.Extensions.Logging;
+
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
-using MediaBrowser.Model.Serialization;
-using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Douban.Providers
 {

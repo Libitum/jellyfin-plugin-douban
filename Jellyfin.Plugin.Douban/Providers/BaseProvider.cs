@@ -4,15 +4,16 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Microsoft.Extensions.Logging;
+
+using Jellyfin.Plugin.Douban.Clients;
 using Jellyfin.Plugin.Douban.Response;
+
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Serialization;
-using Microsoft.Extensions.Logging;
-
-using Jellyfin.Plugin.Douban.Clients;
 
 namespace Jellyfin.Plugin.Douban.Providers
 {

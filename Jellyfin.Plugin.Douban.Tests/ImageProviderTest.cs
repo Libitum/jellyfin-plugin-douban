@@ -1,12 +1,15 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Model.Entities;
+
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using Xunit.Abstractions;
 
 using Jellyfin.Plugin.Douban.Providers;
+
+using MediaBrowser.Model.Entities;
+
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Jellyfin.Plugin.Douban.Tests
 {
