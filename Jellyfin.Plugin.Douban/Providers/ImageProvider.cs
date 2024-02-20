@@ -25,7 +25,7 @@ namespace Jellyfin.Plugin.Douban.Providers
         public int Order => 3;
 
         public ImageProvider(IHttpClientFactory httpClientFactory,
-                             ILoggerFactory loggerFactory) : base(httpClientFactory, loggerFactory)
+                             ILoggerFactory loggerFactory) : base(httpClientFactory, loggerFactory.CreateLogger<ImageProvider>())
         {
             // empty
         }
@@ -33,13 +33,13 @@ namespace Jellyfin.Plugin.Douban.Providers
         public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"[DOUBAN] GetImages for item: {item.Name}");
+            _logger.LogInformation("GetImages for item: {item.Name}", item.Name);
 
             var list = new List<RemoteImageInfo>();
             var sid = item.GetProviderId(ProviderID);
             if (string.IsNullOrWhiteSpace(sid))
             {
-                _logger.LogWarning($"[DOUBAN] Got images failed because the sid of \"{item.Name}\" is empty!");
+                _logger.LogWarning("Got images failed because the sid of #{item.Name}# is empty!", item.Name);
                 return list;
             }
 

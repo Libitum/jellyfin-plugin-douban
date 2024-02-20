@@ -20,7 +20,7 @@ namespace Jellyfin.Plugin.Douban.Providers
         public int Order => 3;
 
         public MovieProvider(IHttpClientFactory httpClientFactory,
-            ILoggerFactory loggerFactory) : base(httpClientFactory, loggerFactory)
+            ILoggerFactory loggerFactory) : base(httpClientFactory, loggerFactory.CreateLogger<MovieProvider>())
         {
             // Empty
         }

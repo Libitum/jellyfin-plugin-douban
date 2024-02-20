@@ -24,7 +24,7 @@ namespace Jellyfin.Plugin.Douban.Providers
         public int Order => 3;
 
         public TVProvider(IHttpClientFactory httpClientFactory,
-                          ILoggerFactory loggerFactory) : base(httpClientFactory, loggerFactory)
+                          ILoggerFactory loggerFactory) : base(httpClientFactory, loggerFactory.CreateLogger<TVProvider>())
         {
             // empty
         }

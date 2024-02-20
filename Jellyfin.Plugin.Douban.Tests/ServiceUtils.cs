@@ -11,7 +11,8 @@ namespace Jellyfin.Plugin.Douban.Tests
         {
             var services = new ServiceCollection()
                 .AddHttpClient()
-                .AddLogging(builder => builder.AddXUnit(output).SetMinimumLevel(LogLevel.Debug))
+                //.AddLogging(builder => builder.AddXUnit(output).SetMinimumLevel(LogLevel.Debug))
+                .AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug))
                 .AddSingleton<T>();
 
             var serviceProvider = services.BuildServiceProvider();

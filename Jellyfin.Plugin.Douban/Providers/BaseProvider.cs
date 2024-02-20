@@ -31,9 +31,9 @@ namespace Jellyfin.Plugin.Douban.Providers
         // All requests 
         protected readonly IDoubanClient _doubanClient;
 
-        protected BaseProvider(IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
+        protected BaseProvider(IHttpClientFactory httpClientFactory, ILogger logger)
         {
-            this._logger = loggerFactory.CreateLogger("Plugin.Douban");
+            this._logger = logger;
             this._config = Plugin.Instance == null ?
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
