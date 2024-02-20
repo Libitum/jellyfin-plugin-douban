@@ -5,13 +5,14 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.Douban
+namespace Jellyfin.Plugin.Douban.Clients
 {
     /// <summary>
     /// Frodo is the secondary domain of API used by Douban APP.
@@ -45,17 +46,14 @@ namespace Jellyfin.Plugin.Douban
         private readonly Random _random = new Random();
 
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger _logger;
 
         private string _userAgent;
         private int _requestCount = 0;
 
-        public FrodoAndroidClient(IHttpClientFactory httpClientFactory, IJsonSerializer jsonSerializer,
-            ILogger logger)
+        public FrodoAndroidClient(IHttpClientFactory httpClientFactory, ILogger logger)
         {
             this._httpClientFactory = httpClientFactory;
-            this._jsonSerializer = jsonSerializer;
             this._logger = logger;
 
             this._userAgent = UserAgents[_random.Next(UserAgents.Length)];
@@ -68,7 +66,7 @@ namespace Jellyfin.Plugin.Douban
         /// <param name="type">Subject type.</param>
         /// <param name="cancellationToken">Used to cancel the request.</param>
         /// <returns>The subject of one item.</returns>
-        public async Task<Response.Subject> GetSubject(string doubanID, MediaType type, CancellationToken cancellationToken)
+        public async Task<Response.Subject> GetSubject(string doubanID, DoubanType type, CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Start to GetSubject by Id: {doubanID}");
 
@@ -82,7 +80,7 @@ namespace Jellyfin.Plugin.Douban
 
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             var contentStream = await GetResponse(path, queryParams, cancellationToken);
-            subject = await _jsonSerializer.DeserializeFromStreamAsync<Response.Subject>(contentStream);
+            subject = await JsonSerializer.DeserializeAsync<Response.Subject>(contentStream);
             // Add it into cache
             _cache.Add(path, subject);
 
@@ -122,7 +120,7 @@ namespace Jellyfin.Plugin.Douban
                     { "count", count.ToString() }
                 };
                 var contentStream = await GetResponse(path, queryParams, cancellationToken);
-                Response.SearchResult result = await _jsonSerializer.DeserializeFromStreamAsync<Response.SearchResult>(contentStream);
+                Response.SearchResult result = await JsonSerializer.DeserializeAsync<Response.SearchResult>(contentStream);
 
                 _logger.LogTrace($"Finish doing Search by name: {name}, count: {count}");
 

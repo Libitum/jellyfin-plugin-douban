@@ -1,38 +1,34 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.Douban
+namespace Jellyfin.Plugin.Douban.Clients
 {
     /// <summary>
-    /// Frodo is the secondary domain of API used by Douban APP.
+    /// Mock as Douban Wechat micro-app cliend.
     /// </summary>
-    public sealed class FrodoWebClient : IDoubanClient
+    public sealed class WechatClient : IDoubanClient
     {
 
         private const string BaseDoubanUrl = "https://frodo.douban.com";
-
         /// API key to use when performing an API call.
         private const string ApiKey = "054022eaeae0b00e0fc068c0c0a2102a";
-
-        private const string UserAgent = "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 "
-            + "(KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36";
+        private const string UserAgent = "MicroMessenger/";
+        private const string Referer = "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html";
 
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger _logger;
 
-        public FrodoWebClient(IHttpClientFactory httpClientFactory, IJsonSerializer jsonSerializer,
-            ILogger logger)
+        public WechatClient(IHttpClientFactory httpClientFactory, ILogger logger)
         {
             this._httpClientFactory = httpClientFactory;
-            this._jsonSerializer = jsonSerializer;
             this._logger = logger;
         }
 
@@ -43,16 +39,16 @@ namespace Jellyfin.Plugin.Douban
         /// <param name="type">Subject type.</param>
         /// <param name="cancellationToken">Used to cancel the request.</param>
         /// <returns>The subject of one item.</returns>
-        public async Task<Response.Subject> GetSubject(string doubanID, MediaType type, CancellationToken cancellationToken)
+        public async Task<Response.Subject> GetSubject(string doubanID, DoubanType type, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Start to GetSubject by Id: {doubanID}");
+            _logger.LogInformation("Start to GetSubject by Id: {doubanID}", doubanID);
 
             string path = $"/api/v2/{type:G}/{doubanID}";
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
-            var contentStream = await GetResponse(path, queryParams, cancellationToken);
-            Response.Subject subject = await _jsonSerializer.DeserializeFromStreamAsync<Response.Subject>(contentStream);
-
-            _logger.LogTrace($"Finish doing GetSubject by Id: {doubanID}");
+            using var contentStream = await GetResponse(path, queryParams, cancellationToken);
+            JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
+            Response.Subject subject = await JsonSerializer.DeserializeAsync<Response.Subject>(contentStream, options, cancellationToken);
+            _logger.LogTrace("Finish doing GetSubject by Id: {doubanID}", doubanID);
             return subject;
         }
 
@@ -77,8 +73,10 @@ namespace Jellyfin.Plugin.Douban
                 { "q", name },
                 { "count", count.ToString() }
             };
-            var contentStream = await GetResponse(path, queryParams, cancellationToken);
-            Response.SearchResult result = await _jsonSerializer.DeserializeFromStreamAsync<Response.SearchResult>(contentStream);
+            using var contentStream = await GetResponse(path, queryParams, cancellationToken);
+            JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
+            Response.SearchResult result = await JsonSerializer.DeserializeAsync<Response.SearchResult>(contentStream,
+                    options, cancellationToken);
 
             _logger.LogTrace($"Finish doing Search by name: {name}, count: {count}");
             return result;
@@ -107,9 +105,8 @@ namespace Jellyfin.Plugin.Douban
             _logger.LogInformation($"Frodo request URL: {url}");
 
             // Send request to Frodo API and get response.
-            using HttpResponseMessage response = await GetAsync(url, cancellationToken);
-            using Stream content = await response.Content.ReadAsStreamAsync(cancellationToken);
-
+            HttpResponseMessage response = await GetAsync(url, cancellationToken);
+            Stream content = await response.Content.ReadAsStreamAsync(cancellationToken);
             _logger.LogTrace($"Finish doing request path: {path}");
             return content;
         }
@@ -126,7 +123,10 @@ namespace Jellyfin.Plugin.Douban
             cancellationToken.ThrowIfCancellationRequested();
 
             var httpClient = _httpClientFactory.CreateClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(10);
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
+            httpClient.DefaultRequestHeaders.Add("Referer", Referer);
 
             HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();

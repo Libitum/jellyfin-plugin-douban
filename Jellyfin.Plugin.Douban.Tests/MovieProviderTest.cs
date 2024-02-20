@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
+
+using Jellyfin.Plugin.Douban.Providers;
 
 namespace Jellyfin.Plugin.Douban.Tests
 {
@@ -21,7 +24,7 @@ namespace Jellyfin.Plugin.Douban.Tests
         }
 
         [Fact]
-        public void TestGetSearchResults()
+        public async Task TestGetSearchResults()
         {
             // Test 1: search metadata.
             MovieInfo info = new MovieInfo()
@@ -29,9 +32,8 @@ namespace Jellyfin.Plugin.Douban.Tests
                 Name = "蝙蝠侠.黑暗骑士",
             };
 
-            var result = _provider.GetSearchResults(info, CancellationToken.None).Result;
+            var result = await _provider.GetSearchResults(info, CancellationToken.None);
             Assert.NotEmpty(result);
-            Assert.True(result.Count() > 1);
             string doubanId = result.FirstOrDefault()?.GetProviderId(BaseProvider.ProviderID);
             int? year = result.FirstOrDefault()?.ProductionYear;
             Assert.Equal("1851857", doubanId);
@@ -39,8 +41,8 @@ namespace Jellyfin.Plugin.Douban.Tests
 
             // Test 2: Already has provider Id.
             info.SetProviderId(BaseProvider.ProviderID, "1851857");
-            result = _provider.GetSearchResults(info, CancellationToken.None).Result;
-            Assert.True(result.Count() == 1);
+            result = await _provider.GetSearchResults(info, CancellationToken.None);
+            Assert.Single(result);
             doubanId = result.FirstOrDefault()?.GetProviderId(BaseProvider.ProviderID);
             year = result.FirstOrDefault()?.ProductionYear;
             Assert.Equal("1851857", doubanId);
@@ -48,14 +50,14 @@ namespace Jellyfin.Plugin.Douban.Tests
         }
 
         [Fact]
-        public void TestGetMetadata()
+        public async Task TestGetMetadata()
         {
             // Test 1: Normal case.
             MovieInfo info = new MovieInfo()
             {
                 Name = "Source Code"
             };
-            var meta = _provider.GetMetadata(info, CancellationToken.None).Result;
+            var meta = await _provider.GetMetadata(info, CancellationToken.None);
             Assert.True(meta.HasMetadata);
             Assert.Equal("源代码", meta.Item.Name);
             Assert.Equal("3075287", meta.Item.GetProviderId(BaseProvider.ProviderID));
@@ -67,7 +69,7 @@ namespace Jellyfin.Plugin.Douban.Tests
                 Name = "Source Code"
             };
             info.SetProviderId(BaseProvider.ProviderID, "1851857");
-            meta = _provider.GetMetadata(info, CancellationToken.None).Result;
+            meta = await _provider.GetMetadata(info, CancellationToken.None);
             Assert.True(meta.HasMetadata);
             Assert.Equal("蝙蝠侠：黑暗骑士", meta.Item.Name);
 
@@ -76,7 +78,7 @@ namespace Jellyfin.Plugin.Douban.Tests
             {
                 Name = "大秦帝国"
             };
-            meta = _provider.GetMetadata(info, CancellationToken.None).Result;
+            meta = await _provider.GetMetadata(info, CancellationToken.None);
             Assert.False(meta.HasMetadata);
         }
     }

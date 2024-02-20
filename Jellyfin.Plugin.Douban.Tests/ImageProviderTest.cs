@@ -1,9 +1,12 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
+
+using Jellyfin.Plugin.Douban.Providers;
 
 namespace Jellyfin.Plugin.Douban.Tests
 {
@@ -19,22 +22,22 @@ namespace Jellyfin.Plugin.Douban.Tests
 
 
         [Fact]
-        public void TestGetPrimary()
+        public async Task TestGetPrimary()
         {
-            var list = _provider.GetPrimary("5350027", "movie", CancellationToken.None).Result;
+            var list = await _provider.GetPrimary("5350027", "movie", CancellationToken.None);
             Assert.Single(list);
             foreach (var item in list)
             {
                 Assert.Equal(ImageType.Primary, item.Type);
-                Assert.EndsWith("p2530249558.webp", item.Url);
+                Assert.EndsWith("p2530249558.jpg", item.Url);
             }
         }
 
         [Fact]
-        public void TestGetBackdrop()
+        public async Task TestGetBackdrop()
         {
             // Test 1:
-            var list = _provider.GetBackdrop("5350027", CancellationToken.None).Result;
+            var list = await _provider.GetBackdrop("5350027", CancellationToken.None);
             foreach (var item in list)
             {
                 Console.WriteLine(item.Url);

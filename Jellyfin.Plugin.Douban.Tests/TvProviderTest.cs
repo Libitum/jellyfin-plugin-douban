@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
+using Jellyfin.Plugin.Douban.Providers;
+
 namespace Jellyfin.Plugin.Douban.Tests
 {
     public class TvProviderTest
@@ -16,19 +18,19 @@ namespace Jellyfin.Plugin.Douban.Tests
         }
 
         [Fact]
-        public void TestSearchSeries()
+        public async void TestSearchSeries()
         {
             SeriesInfo info = new SeriesInfo()
             {
                 Name = "老友记",
             };
-            var result = _doubanProvider.GetSearchResults(info, CancellationToken.None).Result;
+            var result = await _doubanProvider.GetSearchResults(info, CancellationToken.None);
 
             Assert.NotEmpty(result);
         }
 
         [Fact]
-        public void TestGetEpisodeMetadata()
+        public async void TestGetEpisodeMetadata()
         {
             EpisodeInfo episodeInfo = new EpisodeInfo()
             {
@@ -38,7 +40,7 @@ namespace Jellyfin.Plugin.Douban.Tests
             };
 
             episodeInfo.SeriesProviderIds["DoubanID"] = "1393859";
-            var metadataResult = _doubanProvider.GetMetadata(episodeInfo, CancellationToken.None).Result;
+            var metadataResult = await _doubanProvider.GetMetadata(episodeInfo, CancellationToken.None);
             Assert.True(metadataResult.HasMetadata);
 
             EpisodeInfo episodeInfo2 = new EpisodeInfo()
@@ -49,19 +51,19 @@ namespace Jellyfin.Plugin.Douban.Tests
             };
 
             episodeInfo2.SeriesProviderIds["DoubanID"] = "1393859";
-            var metadataResult2 = _doubanProvider.GetMetadata(episodeInfo2, CancellationToken.None).Result;
+            var metadataResult2 = await _doubanProvider.GetMetadata(episodeInfo2, CancellationToken.None);
             Assert.True(metadataResult2.HasMetadata);
         }
 
         [Fact]
-        public void TestGetSeasonMetadata()
+        public async void TestGetSeasonMetadata()
         {
             SeasonInfo seasonInfo = new SeasonInfo()
             {
                 Name = "老友记 第二季"
             };
             seasonInfo.SeriesProviderIds["DoubanID"] = "1393859";
-            var metadataResult = _doubanProvider.GetMetadata(seasonInfo, CancellationToken.None).Result;
+            var metadataResult = await _doubanProvider.GetMetadata(seasonInfo, CancellationToken.None);
 
             Assert.True(metadataResult.HasMetadata);
         }

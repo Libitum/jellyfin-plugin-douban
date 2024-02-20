@@ -12,7 +12,7 @@ using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.Douban
+namespace Jellyfin.Plugin.Douban.Providers
 {
     public class TVProvider : BaseProvider, IHasOrder,
         IRemoteMetadataProvider<Series, SeriesInfo>,
@@ -23,8 +23,7 @@ namespace Jellyfin.Plugin.Douban
         public int Order => 3;
 
         public TVProvider(IHttpClientFactory httpClientFactory,
-                          IJsonSerializer jsonSerializer,
-                          ILogger<TVProvider> logger) : base(httpClientFactory, jsonSerializer, logger)
+                          ILogger<TVProvider> logger) : base(httpClientFactory, logger)
         {
             // empty
         }

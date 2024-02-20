@@ -10,10 +10,11 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Serialization;
-
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.Douban
+using Jellyfin.Plugin.Douban.Clients;
+
+namespace Jellyfin.Plugin.Douban.Providers
 {
     public abstract class BaseProvider
     {
@@ -29,28 +30,27 @@ namespace Jellyfin.Plugin.Douban
         // All requests 
         protected readonly IDoubanClient _doubanClient;
 
-        protected BaseProvider(IHttpClientFactory httpClientFactory,
-            IJsonSerializer jsonSerializer, ILogger logger)
+        protected BaseProvider(IHttpClientFactory httpClientFactory, ILogger logger)
         {
             this._logger = logger;
             this._config = Plugin.Instance == null ?
                                new Configuration.PluginConfiguration() :
                                Plugin.Instance.Configuration;
 
-            this._doubanClient = new FrodoAndroidClient(httpClientFactory, jsonSerializer, logger);
+            this._doubanClient = new WechatClient(httpClientFactory, logger);
         }
 
         public Task<HttpResponseMessage> GetImageResponse(string url,
            CancellationToken cancellationToken)
         {
-            _logger.LogInformation("[DOUBAN] GetImageResponse url: {0}", url);
+            _logger.LogInformation("[DOUBAN] GetImageResponse url: {}", url);
             return _doubanClient.GetAsync(url, cancellationToken);
         }
 
         public async Task<List<Response.SearchTarget>> Search<T>(string name,
             CancellationToken cancellationToken)
         {
-            MediaType type = typeof(T) == typeof(Movie) ? MediaType.movie : MediaType.tv;
+            DoubanType type = typeof(T) == typeof(Movie) ? DoubanType.movie : DoubanType.tv;
 
             _logger.LogInformation($"[DOUBAN] Searching for sid of {type} named \"{name}\"");
 
@@ -67,9 +67,9 @@ namespace Jellyfin.Plugin.Douban
             try
             {
                 var response = await _doubanClient.Search(name, cancellationToken);
-                if (response.Items.Count > 0)
+                if (response.Subjects.Items.Count > 0)
                 {
-                    searchResults = response.Items.Where(item => item.Target_Type == type.ToString())
+                    searchResults = response.Subjects.Items.Where(item => item.Target_Type == type.ToString())
                         .Select(item => item.Target).ToList();
 
                     if (searchResults.Count == 0)
@@ -95,7 +95,7 @@ namespace Jellyfin.Plugin.Douban
         protected async Task<Response.Subject> GetSubject<T>(string sid,
             CancellationToken cancellationToken) where T : BaseItem
         {
-            MediaType type = typeof(T) == typeof(Movie) ? MediaType.movie : MediaType.tv;
+            DoubanType type = typeof(T) == typeof(Movie) ? DoubanType.movie : DoubanType.tv;
             return await _doubanClient.GetSubject(sid, type, cancellationToken);
         }
 
@@ -104,7 +104,7 @@ namespace Jellyfin.Plugin.Douban
         {
             var result = new MetadataResult<T>();
 
-            MediaType type = typeof(T) == typeof(Movie) ? MediaType.movie : MediaType.tv;
+            DoubanType type = typeof(T) == typeof(Movie) ? DoubanType.movie : DoubanType.tv;
             var subject = await _doubanClient.GetSubject(sid, type, cancellationToken);
 
             result.Item = TransMediaInfo<T>(subject);
@@ -161,7 +161,7 @@ namespace Jellyfin.Plugin.Douban
                     Name = crew.Name,
                     Type = personType,
                     ImageUrl = crew.Avatar?.Large ?? "",
-                    Role = crew.Roles.Count > 0 ? crew.Roles[0] : ""
+                    Role = crew.Roles?.Count > 0 ? crew.Roles[0] : ""
                 };
 
                 personInfo.SetProviderId(ProviderID, crew.Id);

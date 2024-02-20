@@ -1,11 +1,15 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Jellyfin.Plugin.Douban.Response
 {
-    public class SearchResult
-    {
+    public class SearchResult {
+        public SubjectList Subjects {get; set;}
+
+    }
+    public class SubjectList {
+        public string Target_Name {get; set;}
         public List<SearchSubject> Items { get; set; }
-        public int Total { get; set; }
     }
 
     public class SearchSubject

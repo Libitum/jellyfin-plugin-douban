@@ -2,9 +2,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Jellyfin.Plugin.Douban
+namespace Jellyfin.Plugin.Douban.Clients
 {
-    public enum MediaType
+    public enum DoubanType
     {
         movie,
         tv
@@ -18,7 +18,7 @@ namespace Jellyfin.Plugin.Douban
         /// <param name="type">Subject type.</param>
         /// <param name="cancellationToken">Used to cancel the request.</param>
         /// <returns>The subject of one item.</returns>
-        public Task<Response.Subject> GetSubject(string doubanID, MediaType type,
+        public Task<Response.Subject> GetSubject(string doubanID, DoubanType type,
             CancellationToken cancellationToken);
 
         /// <summary>

@@ -11,11 +11,12 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
-using MediaBrowser.Model.Serialization;
 
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.Douban
+using Jellyfin.Plugin.Douban.Clients;
+
+namespace Jellyfin.Plugin.Douban.Providers
 {
     public class ImageProvider : BaseProvider, IRemoteImageProvider, IHasOrder
     {
@@ -23,8 +24,7 @@ namespace Jellyfin.Plugin.Douban
         public int Order => 3;
 
         public ImageProvider(IHttpClientFactory httpClientFactory,
-                             IJsonSerializer jsonSerializer,
-                             ILogger<ImageProvider> logger) : base(httpClientFactory, jsonSerializer, logger)
+                             ILogger<ImageProvider> logger) : base(httpClientFactory, logger)
         {
             // empty
         }
@@ -70,8 +70,8 @@ namespace Jellyfin.Plugin.Douban
             CancellationToken cancellationToken)
         {
             var list = new List<RemoteImageInfo>();
-            var item = await _doubanClient.GetSubject(sid, Enum.Parse<MediaType>(type), cancellationToken);
-            list.Add(new RemoteImageInfo
+            var item = await _doubanClient.GetSubject(sid, Enum.Parse<DoubanType>(type), cancellationToken);
+            list.Add(new RemoteImageInfo()
             {
                 ProviderName = Name,
                 Url = item.Pic.Large,

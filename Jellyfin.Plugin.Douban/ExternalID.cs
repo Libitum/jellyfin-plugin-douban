@@ -3,6 +3,7 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
+using Jellyfin.Plugin.Douban.Providers;
 
 namespace Jellyfin.Plugin.Douban
 {
