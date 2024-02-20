@@ -44,7 +44,7 @@ namespace Jellyfin.Plugin.Douban.Providers
         public Task<HttpResponseMessage> GetImageResponse(string url,
            CancellationToken cancellationToken)
         {
-            _logger.LogInformation("[DOUBAN] GetImageResponse url: {}", url);
+            _logger.LogInformation("GetImageResponse url: {url}", url);
             return _doubanClient.GetAsync(url, cancellationToken);
         }
 
@@ -53,13 +53,13 @@ namespace Jellyfin.Plugin.Douban.Providers
         {
             DoubanType type = typeof(T) == typeof(Movie) ? DoubanType.movie : DoubanType.tv;
 
-            _logger.LogInformation($"[DOUBAN] Searching for sid of {type} named \"{name}\"");
+            _logger.LogInformation("Searching for sid of {type} named #{name}#", type, name);
 
             var searchResults = new List<Response.SearchTarget>();
 
             if (string.IsNullOrWhiteSpace(name))
             {
-                _logger.LogWarning($"[DOUBAN] Search name is empty.");
+                _logger.LogWarning("Search name is empty.");
                 return searchResults;
             }
 
@@ -75,21 +75,21 @@ namespace Jellyfin.Plugin.Douban.Providers
 
                     if (searchResults.Count == 0)
                     {
-                        _logger.LogWarning($"[DOUBAN] Seems like \"{name}\" genre is not {type}.");
+                        _logger.LogWarning("Seems like #{name}# genre is not {type}.", name, type);
                     }
                 }
                 else
                 {
-                    _logger.LogWarning($"[DOUBAN] No results found for \"{name}\".");
+                    _logger.LogWarning("No results found for #{name}#.", name);
                 }
             }
             catch (HttpRequestException e)
             {
-                _logger.LogError($"[DOUBAN] Search \"{name}\" error, got {e.StatusCode}.");
+                _logger.LogError("Search #{name}# error, got {e.StatusCode}.", name, e.StatusCode);
                 throw;
             }
 
-            _logger.LogInformation($"[DOUBAN] Finish searching {name}, count: {searchResults.Count}");
+            _logger.LogInformation("Finish searching #{name}#, count: {searchResults.Count}", name, searchResults.Count);
             return searchResults;
         }
 
