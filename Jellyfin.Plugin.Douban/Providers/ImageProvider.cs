@@ -21,7 +21,7 @@ namespace Jellyfin.Plugin.Douban.Providers
 {
     public class ImageProvider : BaseProvider, IRemoteImageProvider, IHasOrder
     {
-        public string Name => "Douban Image Provider";
+        public string Name => "豆瓣刮削器";
         public int Order => 3;
 
         public ImageProvider(IHttpClientFactory httpClientFactory,

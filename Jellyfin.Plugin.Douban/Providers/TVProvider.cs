@@ -20,7 +20,7 @@ namespace Jellyfin.Plugin.Douban.Providers
         IRemoteMetadataProvider<Season, SeasonInfo>,
         IRemoteMetadataProvider<Episode, EpisodeInfo>
     {
-        public string Name => "Douban TV Provider";
+        public string Name => "豆瓣刮削器";
         public int Order => 3;
 
         public TVProvider(IHttpClientFactory httpClientFactory,

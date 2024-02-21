@@ -16,7 +16,7 @@ namespace Jellyfin.Plugin.Douban.Providers
     public class MovieProvider : BaseProvider, IHasOrder,
         IRemoteMetadataProvider<Movie, MovieInfo>
     {
-        public string Name => "Douban Movie Provider";
+        public string Name => "豆瓣刮削器";
         public int Order => 3;
 
         public MovieProvider(IHttpClientFactory httpClientFactory,
