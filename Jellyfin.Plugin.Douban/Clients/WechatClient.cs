@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,9 +46,9 @@ namespace Jellyfin.Plugin.Douban.Clients
 
             string path = $"/api/v2/{type:G}/{doubanID}";
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
-            using var contentStream = await GetResponse(path, queryParams, cancellationToken);
+            var content = await GetResponse(path, queryParams, cancellationToken);
             JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
-            Response.Subject subject = await JsonSerializer.DeserializeAsync<Response.Subject>(contentStream, options, cancellationToken);
+            Response.Subject subject = await content.ReadFromJsonAsync<Response.Subject>(options, cancellationToken);
             _logger.LogTrace("Finish doing GetSubject by Id: {doubanID}", doubanID);
             return subject;
         }
@@ -74,10 +74,9 @@ namespace Jellyfin.Plugin.Douban.Clients
                 { "q", name },
                 { "count", count.ToString() }
             };
-            using var contentStream = await GetResponse(path, queryParams, cancellationToken);
+            var content = await GetResponse(path, queryParams, cancellationToken);
             JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
-            Response.SearchResult result = await JsonSerializer.DeserializeAsync<Response.SearchResult>(contentStream,
-                    options, cancellationToken);
+            Response.SearchResult result = await content.ReadFromJsonAsync<Response.SearchResult>(options, cancellationToken);
 
             _logger.LogTrace($"Finish doing Search by name: {name}, count: {count}");
             return result;
@@ -91,7 +90,7 @@ namespace Jellyfin.Plugin.Douban.Clients
         /// <param name="queryParams">Parameters for the request.</param>
         /// <param name="cancellationToken">Used to cancel the request.</param>
         /// <returns>The HTTP content with the type of stream.</returns>
-        private async Task<Stream> GetResponse(string path, Dictionary<string, string> queryParams,
+        private async Task<HttpContent> GetResponse(string path, Dictionary<string, string> queryParams,
                 CancellationToken cancellationToken)
         {
             _logger.LogTrace($"Start to request path: {path}");
@@ -107,9 +106,8 @@ namespace Jellyfin.Plugin.Douban.Clients
 
             // Send request to Frodo API and get response.
             HttpResponseMessage response = await GetAsync(url, cancellationToken);
-            Stream content = await response.Content.ReadAsStreamAsync(cancellationToken);
             _logger.LogTrace($"Finish doing request path: {path}");
-            return content;
+            return response.Content;
         }
 
 
