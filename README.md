@@ -1,66 +1,10 @@
 # Douban plugin for Jellyfin
 
-## 1. Background
+## 0. 写在前面的话
 
-[Jellyfin](https://github.com/jellyfin/jellyfin) is a Free Software Media System
-that puts you in control of managing and streaming your media. You can find
-more information in the [homepage](https://jellyfin.media/)
+这个项目是我在 19 年折腾 NAS 的时候心血来潮写的小玩具，当时还不会 c#，由于工作很忙，只能一点点边学边折腾。
 
-[Douban](https://www.douban.com/) is a famous media information website in China.
-It just like IMDB or TMDB.
-
-This plugin is a remote metadata provider for Jellyfin, which can fetch metadata
-for movies and TV series from Douban, including rating, summary, casts, etc.
-
-## 2. Usage
-
-In Jellyfin v10.6.0 or newer version, you can install this plugin by adding repository directly.
-
-Repository URL: https://raw.githubusercontent.com/Libitum/jellyfin-plugin-douban/master/manifest.json
-
-
-For version older than v10.6.0, please try the way below:
-
-1. Download from release page or compile by yourself.
-2. Decompress the package, and put the "Douban" directory as the subdirectory of
-   "plugins" in Jellyfin.
-    * For Linux, it's in "~/.local/jellyfin/config/plugins"
-    * For Mac, it's in "~/.local/share/jellyfin/plugins"
-    * For Docker, it's in "/config/plugins" inner Docker
-    * For Windows 10, it's in "C:\ProgramData\Jellyfin\Server\plugins" if using Administrator.
-    * For other system, if you cannot find it, please let me know.
-3. Restart the Jellyfin service.
-
-## 3. Features
-
-1. Support most features of Movie and TV series.
-2. Support fetching background images if the item has suitable backdrop.
-3. Support delay for every request to avoid blocked by Douban.
-4. Do not support merge different seasons into one.
-
-## 4. Configuration
-
-After installing the plugin, we can enable it in libraries for Movie and
-TV series.
-
-Firstly, we need to enable the advanced settings to enable image provider
-which need to be configured later.
-![enable advanced settings](assets/enable_advanced_settings.png?raw=true)
-
-Secondly, please set the language to Chinese. Douban provider will not work in
-other language.
-![language and country](assets/language_and_country.png?raw=true)
-
-Thirdly, please enable "Douban TV Provider" for your libraries. Besides, it's
-"Douban Movie Provider" for type of Movie.
-![enable douban provider](assets/enable_douban_provider.png?raw=true)
-
-Finally, please enable "Douban Image Provider" as the Series image fetcher.
-This is only available when you enable the advanced settings before. It could
-has no posters without this setting.
-![enable image provider](assets/enable_douban_image_provider.png?raw=true)
-
-# 中文版
+时过境迁，没想到这么多年过去了，反而是工作清闲下来了（心酸）。朝花夕拾，权当纪念~
 
 ## 1. 背景
 
@@ -74,16 +18,17 @@ has no posters without this setting.
 
 ## 2. 使用方式
 
-对于 v10.6.0 以及更新的 Jellyfin 版本，可以通过添加插件仓库的方式安装。
+### 通过插件仓库安装
 
-插件仓库地址：https://raw.githubusercontent.com/Libitum/jellyfin-plugin-douban/master/manifest.json
+1. 插件仓库地址：https://github.com/Libitum/jellyfin-plugin-douban/releases/latest/download/manifest.json
 
+TODO：截图介绍过程
 
-对于 v10.5.x 及之前的版本，请参考以下方式进行安装：
+### 手动安装
 
 1. 从 Release 页面下载最新的版本，或者自行编译。
 2. 把下载的文件解压，然后将 Douban 文件夹放到 Jellyfin 的 "plugins" 目录下。
-   * 对于 Linux, plugins 目录在 "$HOME/.local/jellyfin/config/plugins"
+   * 对于 Linux, plugins 目录在 "$HOME/.local/share/jellyfin/plugins"
    * 对于 Mac 系统, 在 "~/.local/share/jellyfin/plugins"
    * 对于 Docker, 在 Docker 中的 "/config/plugins" 目录下。 相应的宿主机目录请查阅自己
      的目录映射配置
